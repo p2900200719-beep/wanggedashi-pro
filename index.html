@@ -10,6 +10,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.0/Recharts.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
@@ -38,9 +40,11 @@
 
   <script type="text/babel">
     // =============================================
-    // 自托管 API 配置
+    // SUPABASE 配置
     // =============================================
-    const API_BASE = 'http://43.173.249.227:3000/api';
+    const SUPABASE_URL = 'https://jcyfejlarjrjduqchhks.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_u2rJHQgwgXZncvcIXMU5rg_bzqrGGou';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // =============================================
     // 图标组件
@@ -105,71 +109,55 @@
     };
 
     // =============================================
-    // 自托管数据层
+    // Supabase 数据层
     // =============================================
     const db = {
       async getManager(userCode) {
-        try {
-          const res = await fetch(`${API_BASE}/manager/${userCode}`);
-          const data = await res.json();
-          return data ? data.manager : null;
-        } catch(e) { console.error(e); return null; }
+        const { data, error } = await supabase
+          .from('grid_manager')
+          .select('manager')
+          .eq('user_code', userCode)
+          .single();
+        if (error && error.code !== 'PGRST116') throw error;
+        return data ? data.manager : null;
       },
       async setManager(userCode, manager) {
-        try {
-          await fetch(`${API_BASE}/manager/${userCode}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ manager })
-          });
-        } catch(e) { console.error(e); }
+        const { error } = await supabase
+          .from('grid_manager')
+          .upsert({ user_code: userCode, manager, updated_at: new Date().toISOString() }, { onConflict: 'user_code' });
+        if (error) throw error;
       },
       async getConfig(userCode, assetId) {
-        try {
-          const res = await fetch(`${API_BASE}/config/${userCode}/${assetId}`);
-          const data = await res.json();
-          return data ? data.config : null;
-        } catch(e) { console.error(e); return null; }
+        const { data, error } = await supabase
+          .from('grid_configs')
+          .select('config')
+          .eq('user_code', userCode)
+          .eq('asset_id', String(assetId))
+          .single();
+        if (error && error.code !== 'PGRST116') throw error;
+        return data ? data.config : null;
       },
       async setConfig(userCode, assetId, config) {
-        try {
-          await fetch(`${API_BASE}/config/${userCode}/${assetId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ config })
-          });
-        } catch(e) { console.error(e); }
+        const { error } = await supabase
+          .from('grid_configs')
+          .upsert({ user_code: userCode, asset_id: String(assetId), config, updated_at: new Date().toISOString() }, { onConflict: 'user_code,asset_id' });
+        if (error) throw error;
       },
       async getRecords(userCode, assetId) {
-        try {
-          const res = await fetch(`${API_BASE}/records/${userCode}/${assetId}`);
-          const data = await res.json();
-          return data ? data.records : null;
-        } catch(e) { console.error(e); return null; }
+        const { data, error } = await supabase
+          .from('grid_records')
+          .select('records')
+          .eq('user_code', userCode)
+          .eq('asset_id', String(assetId))
+          .single();
+        if (error && error.code !== 'PGRST116') throw error;
+        return data ? data.records : null;
       },
       async setRecords(userCode, assetId, records) {
-        try {
-          await fetch(`${API_BASE}/records/${userCode}/${assetId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ records })
-          });
-        } catch(e) { console.error(e); }
-      },
-      async saveSnapshot(userCode, assetId, snapDate, snapshot) {
-        try {
-          await fetch(`${API_BASE}/snapshot/${userCode}/${assetId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ snap_date: snapDate, snapshot })
-          });
-        } catch(e) { console.error(e); }
-      },
-      async getSnapshots(userCode, assetId) {
-        try {
-          const res = await fetch(`${API_BASE}/snapshots/${userCode}/${assetId}`);
-          return await res.json();
-        } catch(e) { console.error(e); return []; }
+        const { error } = await supabase
+          .from('grid_records')
+          .upsert({ user_code: userCode, asset_id: String(assetId), records, updated_at: new Date().toISOString() }, { onConflict: 'user_code,asset_id' });
+        if (error) throw error;
       }
     };
 
@@ -363,8 +351,6 @@
         assetType: assetConfig.type || 'fund',
         totalPrincipal: 50000, initialPositionPct: 20, idleInterestRate: 1.0,
         skyLine: 3.0, groundLine: 1.0, gridSizePct: 5.0, minBuy: 1000, maxBuy: 5000,
-        feeRate: 0.015, // 手续费率 %
-        maxPositionPct: 80, // 仓位上限 %
       };
 
       const [config, setConfigState] = useState(defaultConfig);
@@ -444,25 +430,6 @@
       const [focusedTradeId, setFocusedTradeId] = useState(null);
       const [showGridPlan, setShowGridPlan] = useState(true);
 
-      // 价格提醒
-      const [priceAlert, setPriceAlert] = useState(null);
-      const [alertDismissed, setAlertDismissed] = useState(false);
-
-      // 快捷记录
-      const [showQuickRecord, setShowQuickRecord] = useState(false);
-      const [quickPrice, setQuickPrice] = useState('');
-      const [quickAmount, setQuickAmount] = useState('');
-
-      // 持仓快照
-      const [snapshots, setSnapshots] = useState([]);
-      const [showSnapshots, setShowSnapshots] = useState(false);
-
-      // 基准对比
-      const [benchmarkData, setBenchmarkData] = useState([]);
-      const [benchmarkCode, setBenchmarkCode] = useState('000300');
-      const [benchmarkName, setBenchmarkName] = useState('沪深300');
-      const [showBenchmark, setShowBenchmark] = useState(false);
-
       const loadData = useCallback(async (codeOverride) => {
         const codeToFetch = codeOverride || config.fundCode;
         if (!codeToFetch) return;
@@ -485,73 +452,6 @@
       useEffect(() => {
         if (dataLoaded && marketData.length === 0 && config.fundCode) loadData();
       }, [dataLoaded]);
-
-      // 加载历史快照
-      useEffect(() => {
-        if (!dataLoaded) return;
-        (async () => {
-          const snaps = await db.getSnapshots(userCode, assetId);
-          setSnapshots(snaps);
-        })();
-      }, [dataLoaded, userCode, assetId]);
-
-      // 自动保存今日快照（每次数据加载完成后）
-      useEffect(() => {
-        if (!currentNetValue || !dataLoaded || stats.totalShares === 0) return;
-        const today = new Date().toISOString().split('T')[0];
-        const snapshot = {
-          date: today,
-          netValue: parseFloat(currentNetValue),
-          totalShares: stats.totalShares,
-          totalAssets: stats.remainingPrincipal + stats.marketValue,
-          totalReturn: stats.totalReturn,
-          roi: stats.totalPrincipal > 0 ? (stats.totalReturn / config.totalPrincipal * 100).toFixed(2) : '0',
-          capitalUsedPct: stats.capitalUsedPct,
-          breakevenPrice: stats.breakevenPrice,
-        };
-        db.saveSnapshot(userCode, assetId, today, snapshot);
-      }, [currentNetValue, dataLoaded]);
-
-      // 获取基准指数数据
-      const fetchBenchmark = useCallback((code) => {
-        return new Promise((resolve, reject) => {
-          const timestamp = Date.now();
-          const getPrefix = (c) => /^(5|6|9)/.test(c) ? '1' : '0';
-          const secId = `${getPrefix(code)}.${code}`;
-          const cbName = `cb_bench_${timestamp}`;
-          const script = document.createElement('script');
-          script.src = `https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=${cbName}&secid=${secId}&fields1=f1&fields2=f51,f53&klt=101&fqt=0&end=20500101&lmt=1000`;
-          const cleanup = () => { try { delete window[cbName]; } catch(e){} if(document.body.contains(script)) document.body.removeChild(script); };
-          window[cbName] = (data) => {
-            cleanup();
-            if (data && data.data && data.data.klines) {
-              const name = data.data.name || code;
-              const klines = data.data.klines.map(line => {
-                const parts = line.split(',');
-                return { date: parts[0], value: parseFloat(parts[1]) };
-              });
-              resolve({ name, klines });
-            } else { reject('无法获取基准数据'); }
-          };
-          script.onerror = () => { cleanup(); reject('网络错误'); };
-          document.body.appendChild(script);
-        });
-      }, []);
-
-      const loadBenchmark = useCallback(async (code) => {
-        try {
-          const { name, klines } = await fetchBenchmark(code);
-          setBenchmarkName(name);
-          // 归一化：以第一个交易日为基准100
-          const firstVal = klines[0]?.value || 1;
-          const normalized = klines.map(k => ({
-            date: k.date,
-            benchmarkRoi: parseFloat(((k.value - firstVal) / firstVal * 100).toFixed(2))
-          }));
-          setBenchmarkData(normalized);
-          setShowBenchmark(true);
-        } catch(e) { alert('获取基准数据失败：' + e); }
-      }, [fetchBenchmark]);
 
       useEffect(() => {
         if (config.fundName && config.fundName !== assetConfig.name) onUpdateAssetName(assetId, config.fundName);
@@ -612,7 +512,7 @@
       }, [marketData, records, config.totalPrincipal, config.idleInterestRate]);
 
       const stats = useMemo(() => {
-        const empty = { totalShares: 0, currentInvested: 0, marketValue: 0, realizedProfit: 0, idleProfit: 0, totalReturn: 0, remainingPrincipal: config.totalPrincipal, breakevenPrice: 0, capitalUsedPct: 0, capitalIdlePct: 100 };
+        const empty = { totalShares: 0, currentInvested: 0, marketValue: 0, realizedProfit: 0, idleProfit: 0, totalReturn: 0, remainingPrincipal: config.totalPrincipal };
         if (marketData.length === 0) return empty;
         const lastDate = marketData[marketData.length - 1].date;
         const lastData = dailyAssetData[lastDate];
@@ -620,38 +520,8 @@
         const currentPrice = parseFloat(currentNetValue) || (marketData.length > 0 ? marketData[marketData.length - 1].netValue : 0);
         const marketValue = lastData.shares * currentPrice;
         const totalAssetsRealtime = lastData.cash + marketValue;
-        // 盈亏平衡价：持仓成本 / 持仓份额
-        const breakevenPrice = lastData.shares > 0 ? lastData.costBasis / lastData.shares : 0;
-        // 资金使用效率
-        const capitalUsedPct = config.totalPrincipal > 0 ? Math.min(100, (lastData.costBasis / config.totalPrincipal * 100)) : 0;
-        const capitalIdlePct = 100 - capitalUsedPct;
-        return { totalShares: lastData.shares, currentInvested: lastData.costBasis, marketValue, realizedProfit: lastData.realizedProfit, idleProfit: lastData.accumulatedInterest, totalReturn: totalAssetsRealtime - config.totalPrincipal, remainingPrincipal: Math.max(0, lastData.cash), breakevenPrice, capitalUsedPct, capitalIdlePct };
+        return { totalShares: lastData.shares, currentInvested: lastData.costBasis, marketValue, realizedProfit: lastData.realizedProfit, idleProfit: lastData.accumulatedInterest, totalReturn: totalAssetsRealtime - config.totalPrincipal, remainingPrincipal: Math.max(0, lastData.cash) };
       }, [dailyAssetData, marketData, currentNetValue, config.totalPrincipal]);
-
-      // 网格触发频率统计（按月）
-      const gridFrequencyStats = useMemo(() => {
-        if (records.length === 0) return [];
-        const monthMap = {};
-        records.forEach(r => {
-          const ym = r.date.split('T')[0].slice(0, 7);
-          if (!monthMap[ym]) monthMap[ym] = { ym, buy: 0, sell: 0, total: 0 };
-          monthMap[ym][r.type]++;
-          monthMap[ym].total++;
-        });
-        return Object.values(monthMap).sort((a, b) => a.ym.localeCompare(b.ym));
-      }, [records]);
-
-      // 仓位上限预警
-      const positionWarning = useMemo(() => {
-        if (!config.maxPositionPct || stats.capitalUsedPct === 0) return null;
-        if (stats.capitalUsedPct >= config.maxPositionPct) {
-          return { level: 'danger', msg: `已投入 ${stats.capitalUsedPct.toFixed(1)}% 超过仓位上限 ${config.maxPositionPct}%，请勿继续加仓！` };
-        }
-        if (stats.capitalUsedPct >= config.maxPositionPct * 0.85) {
-          return { level: 'warn', msg: `已投入 ${stats.capitalUsedPct.toFixed(1)}%，接近仓位上限 ${config.maxPositionPct}%，注意控制仓位。` };
-        }
-        return null;
-      }, [stats.capitalUsedPct, config.maxPositionPct]);
 
       const calculateAdviceAmount = (price, totalPrincipal, skyLine, groundLine, minBuy, maxBuy, isInit, lastOpPrice, currentShares) => {
         if (!price || isNaN(price)) return { buyAdvice: 0, sellAdvice: 0, positionPct: 0 };
@@ -809,52 +679,11 @@
         if (optimizationResult) { setConfig(prev => ({ ...prev, gridSizePct: optimizationResult.gridSize, minBuy: optimizationResult.minBuy, maxBuy: optimizationResult.maxBuy })); alert(`已应用最佳策略参数`); }
       };
 
-      // 价格提醒逻辑 - 每次currentNetValue更新时检查
-      useEffect(() => {
-        if (!currentNetValue || records.length === 0 || alertDismissed) return;
-        const price = parseFloat(currentNetValue);
-        if (!nextActionAnalysis) return;
-        const { nextBuyPrice, nextSellPrice } = nextActionAnalysis;
-        if (price <= nextBuyPrice) {
-          setPriceAlert({ type: 'buy', price, triggerPrice: nextBuyPrice, message: `已触达买入网格线！当前价 ${price.toFixed(4)} ≤ 买入触发价 ${nextBuyPrice.toFixed(4)}` });
-        } else if (price >= nextSellPrice) {
-          setPriceAlert({ type: 'sell', price, triggerPrice: nextSellPrice, message: `已触达卖出网格线！当前价 ${price.toFixed(4)} ≥ 卖出触发价 ${nextSellPrice.toFixed(4)}` });
-        } else {
-          setPriceAlert(null);
-        }
-      }, [currentNetValue, records, alertDismissed]);
-
-      // 快捷记录提交
-      const handleQuickRecord = () => {
-        const price = parseFloat(quickPrice);
-        const amount = parseFloat(quickAmount);
-        if (!price || !amount) { alert('请填写价格和金额'); return; }
-        // 自动判断买卖方向
-        const sortedRecords = [...records].sort((a, b) => new Date(b.date) - new Date(a.date));
-        const lastPrice = sortedRecords.length > 0 ? sortedRecords[0].price : 0;
-        const type = lastPrice > 0 ? (price < lastPrice ? 'buy' : 'sell') : 'buy';
-        const feeRate = (config.feeRate || 0) / 100;
-        const actualAmount = type === 'buy' ? amount * (1 + feeRate) : amount * (1 - feeRate);
-        const shares = parseFloat((amount / price).toFixed(2));
-        const rec = {
-          id: Date.now(),
-          date: currentDataDate ? new Date(currentDataDate).toISOString() : new Date().toISOString(),
-          type, price, amount: Math.round(actualAmount), shares,
-          fee: Math.round(amount * feeRate)
-        };
-        updateRecords([rec, ...records]);
-        setShowQuickRecord(false);
-        setQuickPrice(''); setQuickAmount('');
-      };
-
       const handleTrade = (type) => {
         if (!amountAdvice || !currentNetValue) return;
         const price = parseFloat(currentNetValue);
         const amount = type === 'buy' ? amountAdvice.buyAdvice : amountAdvice.sellAdvice;
-        const feeRate = (config.feeRate || 0) / 100;
-        const fee = Math.round(amount * feeRate);
-        const actualAmount = type === 'buy' ? amount + fee : amount - fee;
-        updateRecords([{ id: Date.now(), date: currentDataDate ? new Date(currentDataDate).toISOString() : new Date().toISOString(), type, price, amount: Math.round(actualAmount), shares: parseFloat((amount / price).toFixed(2)), fee }, ...records]);
+        updateRecords([{ id: Date.now(), date: currentDataDate ? new Date(currentDataDate).toISOString() : new Date().toISOString(), type, price, amount, shares: parseFloat((amount / price).toFixed(2)) }, ...records]);
       };
 
       const handleManualSubmit = () => {
@@ -918,34 +747,6 @@
 
           {activeTab === 'dashboard' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-              {/* 价格提醒横幅 */}
-              {priceAlert && !alertDismissed && (
-                <div className="lg:col-span-12">
-                  <div className={`flex items-center justify-between px-5 py-3 rounded-xl border-2 font-medium ${priceAlert.type === 'buy' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-red-50 border-red-300 text-red-800'}`}>
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{priceAlert.type === 'buy' ? '🟢' : '🔴'}</span>
-                      <div>
-                        <div className="font-bold text-base">{priceAlert.type === 'buy' ? '买入信号触发！' : '卖出信号触发！'}</div>
-                        <div className="text-sm opacity-80">{priceAlert.message}</div>
-                      </div>
-                    </div>
-                    <button onClick={() => setAlertDismissed(true)} className="text-slate-400 hover:text-slate-600 p-1 ml-4">
-                      <Icon name="X" size={18} />
-                    </button>
-                  </div>
-                </div>
-              )}
-              {/* 仓位上限预警 */}
-              {positionWarning && (
-                <div className="lg:col-span-12">
-                  <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border-2 font-medium ${positionWarning.level === 'danger' ? 'bg-red-50 border-red-400 text-red-800' : 'bg-amber-50 border-amber-300 text-amber-800'}`}>
-                    <span className="text-xl">{positionWarning.level === 'danger' ? '🚨' : '⚠️'}</span>
-                    <span className="text-sm">{positionWarning.msg}</span>
-                  </div>
-                </div>
-              )}
-
               {/* 左侧控制面板 */}
               <div className="lg:col-span-4 space-y-6 flex flex-col h-[500px]">
                 <Card className="p-5 border-indigo-100 ring-4 ring-indigo-50/50 relative overflow-hidden flex-1 flex flex-col justify-between">
@@ -1046,11 +847,6 @@
                               <Label value={`成本 ${(stats.currentInvested / stats.totalShares).toFixed(4)}`} position="insideTopRight" fill="#f59e0b" fontSize={10} />
                             </ReferenceLine>
                           )}
-                          {stats.breakevenPrice > 0 && stats.breakevenPrice !== (stats.currentInvested / stats.totalShares) && (
-                            <ReferenceLine y={stats.breakevenPrice} stroke="#a855f7" strokeDasharray="4 2" strokeWidth={1.5}>
-                              <Label value={`盈亏平衡 ${stats.breakevenPrice.toFixed(4)}`} position="insideBottomRight" fill="#a855f7" fontSize={10} />
-                            </ReferenceLine>
-                          )}
                           {focusedTradeDate && <ReferenceLine x={focusedTradeDate} stroke="#f59e0b" strokeWidth={2}><Label value="定位点" position="top" fill="#f59e0b" fontSize={10} /></ReferenceLine>}
                           <Area type="monotone" dataKey="netValue" fill="url(#colorVal)" stroke="#6366f1" strokeWidth={2} isAnimationActive={false} />
                           <defs><linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} /><stop offset="95%" stopColor="#6366f1" stopOpacity={0} /></linearGradient></defs>
@@ -1074,36 +870,6 @@
                     <div className="p-3 bg-red-50 rounded-lg border border-red-100"><div className="text-xs text-red-400 mb-1">总收益 (含闲置)</div><div className={`text-xl font-bold ${stats.totalReturn >= 0 ? 'text-red-500' : 'text-green-600'}`}>{stats.totalReturn > 0 ? '+' : ''}{stats.totalReturn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div></div>
                     <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100"><div className="text-xs text-indigo-400 mb-1">剩余可用本金</div><div className="text-xl font-bold text-indigo-600">¥{stats.remainingPrincipal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div></div>
                   </div>
-
-                  {/* 资金使用效率进度条 */}
-                  {stats.totalShares > 0 && (
-                    <div className="mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-xs font-medium text-slate-600">资金使用效率</span>
-                        <span className="text-xs font-bold text-slate-700">{stats.capitalUsedPct.toFixed(1)}% 已投入</span>
-                      </div>
-                      <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-500 flex"
-                          style={{width: '100%'}}>
-                          <div className="h-full bg-indigo-500 rounded-l-full" style={{width: `${stats.capitalUsedPct}%`}}></div>
-                          <div className="h-full bg-amber-300" style={{width: `${stats.capitalIdlePct}%`}}></div>
-                        </div>
-                      </div>
-                      <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                        <span>已投入 ¥{stats.currentInvested.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
-                        <span>闲置 ¥{stats.remainingPrincipal.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
-                      </div>
-                      {config.maxPositionPct && (
-                        <div className="mt-1.5 text-[10px] text-slate-400 flex justify-between">
-                          <span>仓位上限 {config.maxPositionPct}%</span>
-                          <span className={stats.capitalUsedPct >= config.maxPositionPct ? 'text-red-500 font-bold' : 'text-slate-400'}>
-                            还可投入 ¥{Math.max(0, (config.maxPositionPct/100 - stats.capitalUsedPct/100) * config.totalPrincipal).toLocaleString(undefined,{maximumFractionDigits:0})}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   <div className="space-y-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg">
                     <div className="flex justify-between"><span>实收盈利</span><span className="font-mono font-medium">{stats.realizedProfit.toFixed(2)}</span></div>
                     <div className="flex justify-between"><span>持仓浮盈</span><span className="font-mono font-medium">{(stats.marketValue - stats.currentInvested).toFixed(2)}</span></div>
@@ -1111,22 +877,6 @@
                     <div className="h-px bg-slate-200 my-1"></div>
                     <div className="flex justify-between"><span>当前持仓份额</span><span className="font-mono">{stats.totalShares.toFixed(0)}份</span></div>
                     <div className="flex justify-between"><span>已投入成本</span><span className="font-mono">{stats.currentInvested.toLocaleString()}</span></div>
-                    {stats.breakevenPrice > 0 && (
-                      <>
-                        <div className="h-px bg-slate-200 my-1"></div>
-                        <div className="flex justify-between items-center">
-                          <span className="flex items-center gap-1 text-purple-600">
-                            <span className="w-2 h-px bg-purple-500 inline-block"></span> 盈亏平衡价
-                          </span>
-                          <div className="text-right">
-                            <span className="font-mono font-bold text-purple-700 block">{stats.breakevenPrice.toFixed(4)}</span>
-                            {currentNetValue && <span className={`text-[10px] ${parseFloat(currentNetValue) >= stats.breakevenPrice ? 'text-emerald-600' : 'text-red-500'}`}>
-                              {parseFloat(currentNetValue) >= stats.breakevenPrice ? '✓ 现价已超平衡价' : `距平衡还差 ${((stats.breakevenPrice - parseFloat(currentNetValue))/stats.breakevenPrice*100).toFixed(2)}%`}
-                            </span>}
-                          </div>
-                        </div>
-                      </>
-                    )}
                   </div>
                 </Card>
               </div>
@@ -1134,42 +884,7 @@
               {/* 手动补录 */}
               <div className="lg:col-span-4 flex flex-col">
                 <Card className="p-4 flex-1 flex flex-col justify-center h-full">
-                  <h3 className="font-bold text-slate-700 mb-2 flex items-center justify-between">
-                    <span className="flex items-center gap-2"><Icon name={isEditMode ? "Edit" : "FilePlus"} size={18} /> {isEditMode ? "编辑记录" : "手动补录"}</span>
-                    <button onClick={() => { setShowQuickRecord(!showQuickRecord); setShowManualForm(false); }} className="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1 rounded flex items-center gap-1">
-                      <Icon name="Zap" size={12} /> 快捷记录
-                    </button>
-                  </h3>
-
-                  {/* 快捷记录面板 */}
-                  {showQuickRecord && (
-                    <div className="mb-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200 space-y-2">
-                      <div className="text-xs text-indigo-600 font-medium mb-1 flex items-center gap-1">
-                        <Icon name="Zap" size={12} /> 快捷记录（自动判断买卖方向）
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input type="number" placeholder="成交价格" value={quickPrice}
-                          onChange={e => setQuickPrice(e.target.value)}
-                          className="border p-2 rounded text-sm w-full focus:ring-1 focus:ring-indigo-400 outline-none" />
-                        <input type="number" placeholder="交易金额" value={quickAmount}
-                          onChange={e => setQuickAmount(e.target.value)}
-                          className="border p-2 rounded text-sm w-full focus:ring-1 focus:ring-indigo-400 outline-none" />
-                      </div>
-                      {quickPrice && quickAmount && records.length > 0 && (() => {
-                        const lastPrice = [...records].sort((a,b) => new Date(b.date)-new Date(a.date))[0].price;
-                        const type = parseFloat(quickPrice) < lastPrice ? 'buy' : 'sell';
-                        return <div className={`text-xs px-2 py-1 rounded ${type==='buy'?'bg-emerald-100 text-emerald-700':'bg-red-100 text-red-700'}`}>
-                          自动判断为：{type==='buy'?'买入':'卖出'}（上次成交 {lastPrice.toFixed(4)}）
-                          {config.feeRate > 0 && <span className="ml-1 opacity-70">手续费 ¥{Math.round(parseFloat(quickAmount)*(config.feeRate/100))}</span>}
-                        </div>;
-                      })()}
-                      <div className="flex gap-2">
-                        <Button onClick={handleQuickRecord} className="flex-1 py-1 text-xs">确认记录</Button>
-                        <Button variant="secondary" onClick={() => setShowQuickRecord(false)} className="flex-1 py-1 text-xs">取消</Button>
-                      </div>
-                    </div>
-                  )}
-
+                  <h3 className="font-bold text-slate-700 mb-2 flex items-center gap-2"><Icon name={isEditMode ? "Edit" : "FilePlus"} size={18} /> {isEditMode ? "编辑记录" : "手动补录"}</h3>
                   {showManualForm ? (
                     <div className="space-y-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
                       <div className="grid grid-cols-2 gap-2">
@@ -1405,7 +1120,7 @@
                   {records.length === 0 ? <div className="p-12 text-center text-slate-400">暂无记录</div> : (
                     <div className="overflow-x-auto max-h-[500px]">
                       <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0"><tr><th className="px-6 py-3">序号</th><th className="px-6 py-3">日期</th><th className="px-6 py-3">操作</th><th className="px-6 py-3 text-right">价格</th><th className="px-6 py-3 text-right">金额</th><th className="px-6 py-3 text-right">份额</th><th className="px-6 py-3 text-right">手续费</th><th className="px-6 py-3 text-center">管理</th></tr></thead>
+                        <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0"><tr><th className="px-6 py-3">序号</th><th className="px-6 py-3">日期</th><th className="px-6 py-3">操作</th><th className="px-6 py-3 text-right">价格</th><th className="px-6 py-3 text-right">金额</th><th className="px-6 py-3 text-right">份额</th><th className="px-6 py-3 text-center">管理</th></tr></thead>
                         <tbody className="divide-y divide-slate-100">
                           {[...records].sort((a, b) => new Date(b.date) - new Date(a.date)).map((r, i, arr) => (
                             <tr key={r.id} className={`hover:bg-slate-50 ${focusedTradeId === r.id ? 'bg-yellow-50' : ''}`}>
@@ -1415,7 +1130,6 @@
                               <td className="px-6 py-3 text-right font-mono">{r.price.toFixed(4)}</td>
                               <td className="px-6 py-3 text-right font-medium">¥{r.amount.toLocaleString()}</td>
                               <td className="px-6 py-3 text-right text-slate-400">{r.shares.toFixed(2)}</td>
-                              <td className="px-6 py-3 text-right text-xs text-slate-400">{r.fee ? `¥${r.fee}` : '—'}</td>
                               <td className="px-6 py-3 text-center flex justify-center gap-2">
                                 <button onClick={() => startEditRecord(r)} className="text-slate-400 hover:text-indigo-600"><Icon name="Edit" size={14} /></button>
                                 <button onClick={() => deleteRecord(r.id)} className="text-slate-400 hover:text-red-600"><Icon name="Trash2" size={14} /></button>
@@ -1444,7 +1158,8 @@
                       <h3 className="font-bold text-slate-800 flex items-center gap-2"><Icon name="TrendingUp" size={18} className="text-indigo-500" /> 资产总值 vs 投入本金</h3>
                       <div className="flex items-center gap-4 text-xs text-slate-500">
                         <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-indigo-500 inline-block"></span>资产总值</span>
-                        <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-slate-400 inline-block"></span>投入本金</span>
+                        <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-slate-400 inline-block border-dashed border-t"></span>投入本金</span>
+                        <span className="flex items-center gap-1"><span className="w-4 h-0.5 bg-amber-400 inline-block"></span>持仓成本价</span>
                       </div>
                     </div>
                     <div style={{height: 300}}>
@@ -1463,54 +1178,25 @@
                     </div>
                   </Card>
 
-                  {/* 收益率曲线 + 基准对比 */}
+                  {/* 收益率曲线 */}
                   <Card className="p-6">
-                    <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                      <h3 className="font-bold text-slate-800 flex items-center gap-2"><Icon name="Activity" size={18} className="text-emerald-500" /> 累计收益率对比</h3>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {showBenchmark && (
-                          <div className="flex items-center gap-1 text-xs text-slate-500">
-                            <span className="w-4 h-0.5 bg-amber-500 inline-block"></span>
-                            <span>{benchmarkName}</span>
-                            <button onClick={() => setShowBenchmark(false)} className="text-slate-300 hover:text-red-400 ml-1"><Icon name="X" size={12} /></button>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1 text-xs">
-                          <select value={benchmarkCode} onChange={e => setBenchmarkCode(e.target.value)}
-                            className="border border-slate-200 rounded px-2 py-1 text-xs outline-none">
-                            <option value="000300">沪深300</option>
-                            <option value="000001">上证指数</option>
-                            <option value="399001">深证成指</option>
-                            <option value="HSI">恒生指数</option>
-                            <option value="513010">恒生科技ETF</option>
-                          </select>
-                          <button onClick={() => loadBenchmark(benchmarkCode)}
-                            className="px-2 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded text-xs hover:bg-amber-100 transition-colors">
-                            加载对比
-                          </button>
-                        </div>
-                        <div className="text-sm font-bold">
-                          <span className={`${stats.totalReturn >= 0 ? 'text-red-500' : 'text-green-600'}`}>
-                            策略 {stats.totalReturn >= 0 ? '+' : ''}{(stats.totalReturn / config.totalPrincipal * 100).toFixed(2)}%
-                          </span>
-                        </div>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-bold text-slate-800 flex items-center gap-2"><Icon name="Activity" size={18} className="text-emerald-500" /> 累计收益率 (%)</h3>
+                      <div className="text-sm font-bold">
+                        <span className={`${stats.totalReturn >= 0 ? 'text-red-500' : 'text-green-600'}`}>
+                          当前 {stats.totalReturn >= 0 ? '+' : ''}{(stats.totalReturn / config.totalPrincipal * 100).toFixed(2)}%
+                        </span>
                       </div>
                     </div>
-                    <div style={{height: 300}}>
+                    <div style={{height: 280}}>
                       <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart
-                          data={chartData.filter(d => d.roi !== undefined).map(d => {
-                            const bench = benchmarkData.find(b => b.date === d.date);
-                            return { ...d, benchmarkRoi: bench ? bench.benchmarkRoi : null };
-                          })}
-                          margin={{ top: 10, right: 20, bottom: 10, left: 10 }}>
+                        <ComposedChart data={chartData.filter(d => d.roi !== undefined)} margin={{ top: 10, right: 20, bottom: 10, left: 10 }}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                           <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} minTickGap={40} />
                           <YAxis orientation="right" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
-                          <Tooltip formatter={(val, name) => [`${val}%`, name === 'roi' ? '策略收益率' : name === 'benchmarkRoi' ? benchmarkName : name]} labelStyle={{fontWeight:'bold'}} />
+                          <Tooltip formatter={(val) => [`${val}%`, '收益率']} labelStyle={{fontWeight:'bold'}} />
                           <ReferenceLine y={0} stroke="#94a3b8" strokeWidth={1} />
-                          <Area type="monotone" dataKey="roi" name="roi" stroke="#10b981" fill="url(#roiGrad)" strokeWidth={2} dot={false} />
-                          {showBenchmark && <Line type="monotone" dataKey="benchmarkRoi" name="benchmarkRoi" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="5 3" connectNulls />}
+                          <Area type="monotone" dataKey="roi" name="收益率" stroke="#10b981" fill="url(#roiGrad)" strokeWidth={2} dot={false} />
                           <defs>
                             <linearGradient id="roiGrad" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
@@ -1523,17 +1209,6 @@
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
-                    {showBenchmark && benchmarkData.length > 0 && (() => {
-                      const lastBench = benchmarkData[benchmarkData.length - 1]?.benchmarkRoi || 0;
-                      const strategyRoi = parseFloat((stats.totalReturn / config.totalPrincipal * 100).toFixed(2));
-                      const excess = (strategyRoi - lastBench).toFixed(2);
-                      return (
-                        <div className={`mt-3 px-4 py-2 rounded-lg text-xs flex items-center gap-2 ${parseFloat(excess) >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                          <span>{parseFloat(excess) >= 0 ? '✅' : '⚠️'}</span>
-                          <span>策略 <b>{strategyRoi}%</b> vs {benchmarkName} <b>{lastBench}%</b>，超额收益 <b>{excess > 0 ? '+' : ''}{excess}%</b></span>
-                        </div>
-                      );
-                    })()}
                   </Card>
 
                   {/* 关键指标卡片 */}
@@ -1552,73 +1227,7 @@
                     ))}
                   </div>
 
-                  {/* 持仓快照历史 */}
-                  <Card className="overflow-hidden">
-                    <div className="p-4 border-b bg-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-100" onClick={() => setShowSnapshots(p => !p)}>
-                      <div className="flex items-center gap-2">
-                        <Icon name="Calendar" size={16} className="text-indigo-500" />
-                        <span className="font-bold text-slate-700">持仓快照历史</span>
-                        <span className="text-xs text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full">{snapshots.length} 条记录</span>
-                      </div>
-                      <Icon name={showSnapshots ? 'ChevronUp' : 'ChevronDown'} size={16} className="text-slate-400" />
-                    </div>
-                    {showSnapshots && (
-                      snapshots.length === 0 ? (
-                        <div className="p-8 text-center text-slate-400 text-sm">暂无快照，每次加载数据后自动记录</div>
-                      ) : (
-                        <>
-                          {/* 快照趋势迷你图 */}
-                          <div className="px-6 pt-4" style={{height: 160}}>
-                            <ResponsiveContainer width="100%" height="100%">
-                              <ComposedChart data={snapshots.map(s => ({ date: s.snap_date, ...s.snapshot }))} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
-                                <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={false} minTickGap={30} />
-                                <YAxis orientation="right" tick={{ fontSize: 9, fill: '#94a3b8' }} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
-                                <Tooltip formatter={(val) => [`${val}%`, '收益率']} />
-                                <ReferenceLine y={0} stroke="#e2e8f0" />
-                                <Area type="monotone" dataKey="roi" stroke="#6366f1" fill="url(#snapGrad)" strokeWidth={2} dot={false} />
-                                <defs><linearGradient id="snapGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.15}/><stop offset="95%" stopColor="#6366f1" stopOpacity={0}/></linearGradient></defs>
-                              </ComposedChart>
-                            </ResponsiveContainer>
-                          </div>
-                          <div className="overflow-x-auto max-h-[300px]">
-                            <table className="w-full text-xs">
-                              <thead className="bg-slate-50 text-slate-500 sticky top-0">
-                                <tr>
-                                  <th className="px-4 py-2 text-left">日期</th>
-                                  <th className="px-4 py-2 text-right">净值</th>
-                                  <th className="px-4 py-2 text-right">持仓份额</th>
-                                  <th className="px-4 py-2 text-right">总资产</th>
-                                  <th className="px-4 py-2 text-right">收益率</th>
-                                  <th className="px-4 py-2 text-right">仓位</th>
-                                  <th className="px-4 py-2 text-right">盈亏平衡价</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100">
-                                {[...snapshots].reverse().map((s, idx) => {
-                                  const snap = s.snapshot;
-                                  return (
-                                    <tr key={idx} className="hover:bg-slate-50">
-                                      <td className="px-4 py-2 font-mono text-slate-600">{s.snap_date}</td>
-                                      <td className="px-4 py-2 text-right font-mono">{snap.netValue?.toFixed(4) || '-'}</td>
-                                      <td className="px-4 py-2 text-right text-slate-500">{Math.round(snap.totalShares || 0).toLocaleString()}</td>
-                                      <td className="px-4 py-2 text-right font-medium">¥{Math.round(snap.totalAssets || 0).toLocaleString()}</td>
-                                      <td className={`px-4 py-2 text-right font-bold ${parseFloat(snap.roi) >= 0 ? 'text-red-500' : 'text-green-600'}`}>
-                                        {parseFloat(snap.roi) >= 0 ? '+' : ''}{snap.roi}%
-                                      </td>
-                                      <td className="px-4 py-2 text-right text-slate-500">{snap.capitalUsedPct?.toFixed(1) || '-'}%</td>
-                                      <td className="px-4 py-2 text-right font-mono text-purple-600">{snap.breakevenPrice?.toFixed(4) || '-'}</td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </>
-                      )
-                    )}
-                  </Card>
-
-                  {/* PDF导出 */}
+                  {/* PDF导出按钮 */}
                   <div className="flex justify-end">
                     <button onClick={() => {
                       const printContent = `
@@ -1793,64 +1402,6 @@
                         </ResponsiveContainer>
                       </div>
                     </Card>
-                    {/* 网格触发频率统计 */}
-                    <Card className="p-6">
-                      <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2"><Icon name="Activity" size={18} className="text-indigo-500" /> 网格触发频率统计</h3>
-                      <p className="text-xs text-slate-400 mb-4">每月买卖触发次数，用于判断网格参数是否合理（触发太少=网格太大，触发太多=网格太小）</p>
-                      {gridFrequencyStats.length === 0 ? (
-                        <div className="text-center py-6 text-slate-400 text-sm">暂无交易记录</div>
-                      ) : (
-                        <>
-                          <div style={{height: 220}}>
-                            <ResponsiveContainer width="100%" height="100%">
-                              <ComposedChart data={gridFrequencyStats} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="ym" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} angle={-30} textAnchor="end" height={40} />
-                                <YAxis orientation="right" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false} />
-                                <Tooltip formatter={(val, name) => [val + '次', name === 'buy' ? '买入' : name === 'sell' ? '卖出' : '合计']} />
-                                <Line type="monotone" dataKey="buy" name="buy" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 4 }} />
-                                <Line type="monotone" dataKey="sell" name="sell" stroke="#ef4444" strokeWidth={2} dot={{ fill: '#ef4444', r: 4 }} />
-                                <Line type="monotone" dataKey="total" name="total" stroke="#6366f1" strokeWidth={2} strokeDasharray="4 2" dot={false} />
-                              </ComposedChart>
-                            </ResponsiveContainer>
-                          </div>
-                          <div className="mt-3 overflow-x-auto">
-                            <table className="w-full text-xs text-center">
-                              <thead className="bg-slate-50 text-slate-500">
-                                <tr>
-                                  <th className="px-3 py-2 text-left">月份</th>
-                                  <th className="px-3 py-2 text-emerald-600">买入次数</th>
-                                  <th className="px-3 py-2 text-red-500">卖出次数</th>
-                                  <th className="px-3 py-2 text-indigo-600">合计</th>
-                                  <th className="px-3 py-2 text-slate-500">活跃度</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100">
-                                {[...gridFrequencyStats].reverse().map((row, idx) => {
-                                  const maxTotal = Math.max(...gridFrequencyStats.map(r => r.total));
-                                  const actPct = maxTotal > 0 ? (row.total / maxTotal * 100) : 0;
-                                  return (
-                                    <tr key={idx} className="hover:bg-slate-50">
-                                      <td className="px-3 py-2 text-left font-mono text-slate-600">{row.ym}</td>
-                                      <td className="px-3 py-2 font-bold text-emerald-600">{row.buy}</td>
-                                      <td className="px-3 py-2 font-bold text-red-500">{row.sell}</td>
-                                      <td className="px-3 py-2 font-bold text-indigo-600">{row.total}</td>
-                                      <td className="px-3 py-2">
-                                        <div className="flex items-center gap-1 justify-center">
-                                          <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                            <div className="h-full bg-indigo-400 rounded-full" style={{width: `${actPct}%`}}></div>
-                                          </div>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </>
-                      )}
-                    </Card>
                   </>
                 )}
               </div>
@@ -1888,12 +1439,6 @@
                       <InputGroup label="单笔最小买入" type="number" value={config.minBuy} onChange={v => setConfig(prev => ({ ...prev, minBuy: parseFloat(v) }))} suffix="元" disabled={isSettingsLocked} />
                       <InputGroup label="单笔最大买入" type="number" value={config.maxBuy} onChange={v => setConfig(prev => ({ ...prev, maxBuy: parseFloat(v) }))} suffix="元" disabled={isSettingsLocked} />
                     </div>
-                    <div className="h-px bg-slate-100 my-2"></div>
-                    <InputGroup label="买卖手续费率 (%)" type="number" value={config.feeRate ?? 0.015} onChange={v => setConfig(prev => ({ ...prev, feeRate: parseFloat(v) }))} suffix="%" disabled={isSettingsLocked} />
-                    <p className="text-xs text-slate-400">场外基金申购费约0.1%，ETF/股票约0.015%+印花税0.1%</p>
-                    <div className="h-px bg-slate-100 my-2"></div>
-                    <InputGroup label="单资产仓位上限 (%)" type="number" value={config.maxPositionPct ?? 80} onChange={v => setConfig(prev => ({ ...prev, maxPositionPct: parseFloat(v) }))} suffix="%" disabled={isSettingsLocked} />
-                    <p className="text-xs text-slate-400">超过此比例时系统发出预警，建议设置为总本金的70-85%，保留部分备用资金</p>
                   </div>
                 </Card>
               </div>
@@ -2059,7 +1604,6 @@
           )}
         </div>
       );
-
     }
 
     // =============================================
@@ -2222,58 +1766,6 @@
                             <div className="text-xs text-amber-400 mb-1">净卖出金额</div>
                             <div className={`text-2xl font-bold ${totalRealized >= 0 ? 'text-red-500' : 'text-green-600'}`}>
                               {totalRealized >= 0 ? '+' : ''}¥{Math.abs(totalRealized).toLocaleString(undefined,{maximumFractionDigits:0})}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 持仓分布饼图 */}
-                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                          <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><Icon name="PieChart" size={16} className="text-indigo-500" /> 本金分布</h3>
-                          <div className="flex items-center gap-6">
-                            <div className="relative" style={{width:160,height:160}}>
-                              <svg width="160" height="160" viewBox="0 0 160 160">
-                                {(() => {
-                                  const items = allAssets.filter(a => a.config).map(a => ({ name: a.config.fundName, value: a.config.totalPrincipal || 0 }));
-                                  const total = items.reduce((s, i) => s + i.value, 0);
-                                  const colors = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
-                                  let cumAngle = -Math.PI / 2;
-                                  return items.map((item, idx) => {
-                                    const angle = (item.value / total) * 2 * Math.PI;
-                                    const x1 = 80 + 70 * Math.cos(cumAngle);
-                                    const y1 = 80 + 70 * Math.sin(cumAngle);
-                                    cumAngle += angle;
-                                    const x2 = 80 + 70 * Math.cos(cumAngle);
-                                    const y2 = 80 + 70 * Math.sin(cumAngle);
-                                    const largeArc = angle > Math.PI ? 1 : 0;
-                                    return (
-                                      <path key={idx}
-                                        d={`M 80 80 L ${x1} ${y1} A 70 70 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                                        fill={colors[idx % colors.length]}
-                                        stroke="white" strokeWidth="2"
-                                      />
-                                    );
-                                  });
-                                })()}
-                                <circle cx="80" cy="80" r="35" fill="white" />
-                                <text x="80" y="76" textAnchor="middle" fontSize="11" fill="#64748b">总本金</text>
-                                <text x="80" y="92" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#1e293b">
-                                  ¥{(totalPrincipal/10000).toFixed(0)}万
-                                </text>
-                              </svg>
-                            </div>
-                            <div className="flex-1 space-y-2">
-                              {allAssets.filter(a => a.config).map((a, idx) => {
-                                const colors = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
-                                const pct = ((a.config.totalPrincipal || 0) / totalPrincipal * 100).toFixed(1);
-                                return (
-                                  <div key={idx} className="flex items-center gap-2 text-sm">
-                                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{background: colors[idx % colors.length]}}></span>
-                                    <span className="text-slate-600 flex-1 truncate">{a.config.fundName}</span>
-                                    <span className="font-bold text-slate-700">{pct}%</span>
-                                    <span className="text-slate-400 text-xs">¥{(a.config.totalPrincipal/10000).toFixed(1)}万</span>
-                                  </div>
-                                );
-                              })}
                             </div>
                           </div>
                         </div>
