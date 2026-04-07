@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; transition: background 0.3s, color 0.3s; }
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -32,6 +32,95 @@
     .sync-dot.syncing { background:#f59e0b; animation: spin 1s linear infinite; border-radius:0; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
     .sync-dot.ok { background:#10b981; }
     .sync-dot.err { background:#ef4444; }
+
+    /* ===== 夜间模式 ===== */
+    .dark { color-scheme: dark; }
+    .dark body, body.dark { background:#0f172a; color:#e2e8f0; }
+    .dark ::-webkit-scrollbar-track { background: #1e293b; }
+    .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+    /* 背景层 */
+    .dark .bg-slate-50  { background-color: #0f172a !important; }
+    .dark .bg-white     { background-color: #1e293b !important; }
+    .dark .bg-slate-100 { background-color: #1e293b !important; }
+    .dark .bg-slate-200 { background-color: #334155 !important; }
+
+    /* 边框 */
+    .dark .border-slate-200 { border-color: #334155 !important; }
+    .dark .border-slate-100 { border-color: #1e293b !important; }
+    .dark .border-slate-300 { border-color: #475569 !important; }
+
+    /* 文字 */
+    .dark .text-slate-800 { color: #f1f5f9 !important; }
+    .dark .text-slate-700 { color: #e2e8f0 !important; }
+    .dark .text-slate-600 { color: #cbd5e1 !important; }
+    .dark .text-slate-500 { color: #94a3b8 !important; }
+    .dark .text-slate-400 { color: #64748b !important; }
+    .dark .text-slate-300 { color: #475569 !important; }
+
+    /* 卡片/面板背景 */
+    .dark .bg-slate-50.rounded-xl,
+    .dark .bg-slate-50.rounded-lg,
+    .dark .bg-slate-50.p-3,
+    .dark .bg-slate-50.p-2,
+    .dark .bg-slate-50 { background-color: #1e293b !important; }
+    .dark .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.5) !important; }
+    .dark .shadow-xl { box-shadow: 0 20px 25px rgba(0,0,0,0.6) !important; }
+    .dark .shadow-2xl { box-shadow: 0 25px 50px rgba(0,0,0,0.7) !important; }
+
+    /* input / select */
+    .dark input, .dark select, .dark textarea {
+      background-color: #0f172a !important;
+      border-color: #334155 !important;
+      color: #e2e8f0 !important;
+    }
+    .dark input::placeholder { color: #475569 !important; }
+    .dark input[type=date]::-webkit-calendar-picker-indicator { filter: invert(1); }
+
+    /* 浅色背景块在夜间转深色 */
+    .dark .bg-indigo-50  { background-color: #1e2a45 !important; }
+    .dark .bg-emerald-50 { background-color: #0d2b22 !important; }
+    .dark .bg-red-50     { background-color: #2b1215 !important; }
+    .dark .bg-amber-50   { background-color: #2b2005 !important; }
+    .dark .bg-blue-50    { background-color: #0d1f35 !important; }
+    .dark .bg-green-50   { background-color: #0d2b22 !important; }
+
+    /* 边框颜色微调 */
+    .dark .border-indigo-100 { border-color: #2d3f6b !important; }
+    .dark .border-emerald-100{ border-color: #1a4033 !important; }
+    .dark .border-red-100    { border-color: #4b1f22 !important; }
+    .dark .border-amber-100  { border-color: #4b3a10 !important; }
+
+    /* header */
+    .dark header { background-color: #1e293b !important; border-color: #334155 !important; }
+
+    /* 导航 tab */
+    .dark .bg-slate-100.p-1.rounded-lg { background-color: #0f172a !important; }
+    .dark nav.flex button { color: #94a3b8; }
+    .dark nav.flex button.bg-white { background-color: #1e293b !important; color: #818cf8 !important; }
+
+    /* 表格 */
+    .dark thead { background-color: #1e293b !important; }
+    .dark tbody tr:hover { background-color: #1e293b !important; }
+    .dark .divide-slate-100 > * + * { border-color: #1e293b !important; }
+    .dark .divide-y > * + * { border-color: #334155 !important; }
+
+    /* hover 状态 */
+    .dark .hover\:bg-slate-50:hover  { background-color: #1e293b !important; }
+    .dark .hover\:bg-slate-100:hover { background-color: #334155 !important; }
+    .dark .hover\:bg-slate-200:hover { background-color: #334155 !important; }
+    .dark .hover\:bg-indigo-50:hover { background-color: #1e2a45 !important; }
+    .dark .hover\:bg-red-50:hover    { background-color: #2b1215 !important; }
+
+    /* 弹窗遮罩内容区 */
+    .dark .bg-black\/60 { background-color: rgba(0,0,0,0.8) !important; }
+
+    /* 渐变背景 (登录页) */
+    .dark .bg-gradient-to-br { background: #0f172a !important; }
+
+    /* 图表区域背景 */
+    .dark .recharts-cartesian-grid line { stroke: #1e293b !important; }
+    .dark .recharts-tooltip-wrapper .bg-white\/95 { background: rgba(15,23,42,0.97) !important; }
   </style>
 </head>
 
@@ -1615,6 +1704,16 @@
       const [showAddModal, setShowAddModal] = useState(false);
       const [newAssetForm, setNewAssetForm] = useState({ name: '', code: '', type: 'fund' });
       const [syncStatus, setSyncStatus] = useState('ok');
+      const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+
+      useEffect(() => {
+        if (darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('darkMode', darkMode);
+      }, [darkMode]);
 
       const handleLogin = (code, manager) => { setUserCode(code); setAssetManagerState(manager); };
 
@@ -1709,6 +1808,14 @@
                   <Icon name="Cloud" size={14} className={syncStatus === 'err' ? 'text-red-400' : syncStatus === 'syncing' ? 'text-amber-400' : 'text-emerald-500'} />
                   <span className="hidden sm:inline">{syncStatus === 'syncing' ? '同步中' : syncStatus === 'err' ? '同步失败' : '云端已同步'}</span>
                 </div>
+                <button onClick={() => setDarkMode(d => !d)}
+                  className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 transition-colors"
+                  title={darkMode ? '切换白天模式' : '切换夜间模式'}>
+                  {darkMode
+                    ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                  }
+                </button>
                 <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors">
                   <Icon name="LogOut" size={14} /> 退出
                 </button>
