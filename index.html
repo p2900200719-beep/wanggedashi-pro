@@ -600,7 +600,7 @@
       const [currentNetValue, setCurrentNetValue] = useState('');
       const [currentDataDate, setCurrentDataDate] = useState('');
       const [isClearConfirming, setIsClearConfirming] = useState(false);
-      const [manualRecord, setManualRecord] = useState({ date: '', price: '', amount: '', type: 'buy', id: null });
+      const [manualRecord, setManualRecord] = useState({ date: '', price: '', shares: '', type: 'buy', id: null });
       const [showManualForm, setShowManualForm] = useState(false);
       const [isEditMode, setIsEditMode] = useState(false);
       const [isOptimizing, setIsOptimizing] = useState(false);
@@ -869,15 +869,53 @@
       };
 
       const handleManualSubmit = () => {
-        if (!manualRecord.date || !manualRecord.price || !manualRecord.amount) { alert("请填写完整信息"); return; }
-        const price = parseFloat(manualRecord.price), amount = parseFloat(manualRecord.amount);
-        const rec = { id: isEditMode && manualRecord.id ? manualRecord.id : Date.now(), date: safeParseDate(manualRecord.date), type: manualRecord.type, price, amount, shares: parseFloat((amount / price).toFixed(2)) };
+        if (!manualRecord.date || !manualRecord.price || !manualRecord.shares) { alert("请填写完整信息"); return; }
+        const price = parseFloat(manualRecord.price), shares = parseFloat(manualRecord.shares);
+        const amount = parseFloat((price * shares).toFixed(2));
+        const rec = { id: isEditMode && manualRecord.id ? manualRecord.id : Date.now(), date: safeParseDate(manualRecord.date), type: manualRecord.type, price, amount, shares };
         if (isEditMode) updateRecords(records.map(r => r.id === rec.id ? rec : r));
         else updateRecords([rec, ...records]);
-        setShowManualForm(false); setIsEditMode(false); setManualRecord({ date: '', price: '', amount: '', type: 'buy', id: null });
+        setShowManualForm(false); setIsEditMode(false); setManualRecord({ date: '', price: '', shares: '', type: 'buy', id: null });
       };
 
-      const startEditRecord = (record) => { setManualRecord({ date: record.date.split('T')[0], price: record.price, amount: record.amount, type: record.type, id: record.id }); setIsEditMode(true); setShowManualForm(true); };
+      // 快捷输入：智能解析粘贴文本
+      const handleQuickParse = (text) => {
+        if (!text.trim()) return;
+        let type = 'buy';
+        if (/卖出|sell|sold/i.test(text)) type = 'sell';
+        else if (/买入|buy|bought/i.test(text)) type = 'buy';
+
+        // 识别日期：2024-01-15 / 2024/01/15 / 20240115
+        const dateMatch = text.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+        const dateCompact = text.match(/(\d{4})(\d{2})(\d{2})/);
+        let date = new Date().toISOString().split('T')[0];
+        if (dateMatch) date = `${dateMatch[1]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[3].padStart(2,'0')}`;
+        else if (dateCompact) date = `${dateCompact[1]}-${dateCompact[2]}-${dateCompact[3]}`;
+
+        // 识别价格（单价通常是小数，优先匹配带小数的数字）
+        const numMatches = [...text.matchAll(/[\d]+\.[\d]+|[\d]{4,}/g)].map(m => parseFloat(m[0]));
+        // 过滤掉明显是日期的数字
+        const nums = numMatches.filter(n => n > 0 && n < 100000 && !(n > 20000101 && n < 20991231));
+        
+        // 价格：较小的小数；份额：较大的整数或带小数的大数
+        let price = '', shares = '';
+        const decimals = nums.filter(n => n < 1000 && !Number.isInteger(n));
+        const integers = nums.filter(n => n >= 1);
+        if (decimals.length > 0) price = decimals[0].toString();
+        if (integers.length > 1) shares = integers.find(n => n !== parseFloat(price))?.toString() || '';
+        else if (integers.length === 1 && !price) price = integers[0].toString();
+        else if (integers.length === 1 && price) shares = integers[0].toString();
+
+        setManualRecord(prev => ({
+          ...prev,
+          type,
+          date: date || prev.date,
+          price: price || prev.price,
+          shares: shares || prev.shares,
+        }));
+      };
+
+      const startEditRecord = (record) => { setManualRecord({ date: record.date.split('T')[0], price: record.price, shares: record.shares, type: record.type, id: record.id }); setIsEditMode(true); setShowManualForm(true); };
 
       const handleFileUpload = (e) => {
         const file = e.target.files[0]; if (!file) return;
@@ -1069,21 +1107,46 @@
                   <h3 className="font-bold text-slate-700 mb-2 flex items-center gap-2"><Icon name={isEditMode ? "Edit" : "FilePlus"} size={18} /> {isEditMode ? "编辑记录" : "手动补录"}</h3>
                   {showManualForm ? (
                     <div className="space-y-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      {/* 快捷粘贴输入框 */}
+                      {!isEditMode && (
+                        <div>
+                          <label className="text-xs text-slate-400 mb-1 block">快捷识别（粘贴交易文字自动填充）</label>
+                          <textarea
+                            rows={2}
+                            placeholder={'例如：2026-04-08 买入 1.3200 8800份
+或：卖出 1.3500 2000股 2026/04/09'}
+                            className="w-full border border-slate-200 rounded p-2 text-xs resize-none focus:outline-none focus:border-indigo-400 bg-white"
+                            onChange={e => handleQuickParse(e.target.value)}
+                          />
+                        </div>
+                      )}
+                      {/* 日期 + 类型 */}
                       <div className="grid grid-cols-2 gap-2">
                         <input type="date" value={manualRecord.date} onChange={e => setManualRecord({ ...manualRecord, date: e.target.value })} className="border p-2 rounded text-sm w-full" />
-                        <select value={manualRecord.type} onChange={e => setManualRecord({ ...manualRecord, type: e.target.value })} className="border p-2 rounded text-sm w-full"><option value="buy">买入</option><option value="sell">卖出</option></select>
+                        <select value={manualRecord.type} onChange={e => setManualRecord({ ...manualRecord, type: e.target.value })} className="border p-2 rounded text-sm w-full">
+                          <option value="buy">买入</option>
+                          <option value="sell">卖出</option>
+                        </select>
                       </div>
+                      {/* 单价 + 份额 */}
                       <div className="grid grid-cols-2 gap-2">
                         <input type="number" placeholder="单价" value={manualRecord.price} onChange={e => setManualRecord({ ...manualRecord, price: e.target.value })} className="border p-2 rounded text-sm w-full" />
-                        <input type="number" placeholder="金额" value={manualRecord.amount} onChange={e => setManualRecord({ ...manualRecord, amount: e.target.value })} className="border p-2 rounded text-sm w-full" />
+                        <input type="number" placeholder="份额（股/份）" value={manualRecord.shares} onChange={e => setManualRecord({ ...manualRecord, shares: e.target.value })} className="border p-2 rounded text-sm w-full" />
                       </div>
+                      {/* 预计金额预览 */}
+                      {manualRecord.price && manualRecord.shares && !isNaN(parseFloat(manualRecord.price)) && !isNaN(parseFloat(manualRecord.shares)) && (
+                        <div className="flex justify-between items-center text-xs px-2 py-1.5 bg-white border border-slate-200 rounded">
+                          <span className="text-slate-400">预计成交金额</span>
+                          <span className="font-bold text-slate-700">¥{(parseFloat(manualRecord.price) * parseFloat(manualRecord.shares)).toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <Button onClick={handleManualSubmit} className="flex-1 py-1 text-xs">{isEditMode ? "确认修改" : "确认添加"}</Button>
                         <Button variant="secondary" onClick={() => { setShowManualForm(false); setIsEditMode(false); }} className="flex-1 py-1 text-xs">取消</Button>
                       </div>
                     </div>
                   ) : (
-                    <Button variant="secondary" onClick={() => { setManualRecord({ date: new Date().toISOString().split('T')[0], price: '', amount: '', type: 'buy', id: null }); setShowManualForm(true); }} className="w-full border-dashed border-2 border-slate-300 h-full min-h-[120px] hover:border-indigo-300 hover:text-indigo-600 flex flex-col gap-1">
+                    <Button variant="secondary" onClick={() => { setManualRecord({ date: new Date().toISOString().split('T')[0], price: '', shares: '', type: 'buy', id: null }); setShowManualForm(true); }} className="w-full border-dashed border-2 border-slate-300 h-full min-h-[120px] hover:border-indigo-300 hover:text-indigo-600 flex flex-col gap-1">
                       <span className="text-xl">+</span><span>添加一笔历史交易</span>
                     </Button>
                   )}
