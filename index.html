@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; transition: background 0.3s, color 0.3s; }
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -32,6 +32,185 @@
     .sync-dot.syncing { background:#f59e0b; animation: spin 1s linear infinite; border-radius:0; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
     .sync-dot.ok { background:#10b981; }
     .sync-dot.err { background:#ef4444; }
+
+    /* ===== 夜间模式 ===== */
+    /*
+      色板：
+        主背景   #1a1d23  (深灰，不纯黑，护眼)
+        卡片背景  #22262f  (比主背景亮一档)
+        浮层/输入 #2a2f3a  (再亮一档，有层次)
+        边框      #383e4a  (柔和分隔线)
+        主文字    #e8eaf0  (近白，不刺眼)
+        次文字    #9aa0b0  (灰蓝，辅助信息)
+        暗文字    #5a6070  (更暗的辅助)
+        强调色    #7c8ff5  (indigo 偏亮，替代纯紫)
+        绿色      #34c98a  (柔和绿)
+        红色      #f47068  (柔和红)
+        橙色      #f59e5a  (柔和橙)
+    */
+    .dark { color-scheme: dark; }
+    .dark body, body.dark {
+      background: #1a1d23 !important;
+      color: #e8eaf0 !important;
+    }
+    .dark ::-webkit-scrollbar-track { background: #22262f; }
+    .dark ::-webkit-scrollbar-thumb { background: #383e4a; border-radius: 4px; }
+    .dark ::-webkit-scrollbar-thumb:hover { background: #4a5266; }
+
+    /* === 背景层次 === */
+    .dark .bg-slate-50  { background-color: #1a1d23 !important; }
+    .dark .bg-white     { background-color: #22262f !important; }
+    .dark .bg-slate-100 { background-color: #2a2f3a !important; }
+    .dark .bg-slate-200 { background-color: #383e4a !important; }
+
+    /* === 边框 === */
+    .dark .border-slate-200 { border-color: #383e4a !important; }
+    .dark .border-slate-100 { border-color: #2a2f3a !important; }
+    .dark .border-slate-300 { border-color: #4a5266 !important; }
+
+    /* === 文字 === */
+    .dark .text-slate-800 { color: #e8eaf0 !important; }
+    .dark .text-slate-700 { color: #d4d8e8 !important; }
+    .dark .text-slate-600 { color: #b0b8cc !important; }
+    .dark .text-slate-500 { color: #9aa0b0 !important; }
+    .dark .text-slate-400 { color: #6e7585 !important; }
+    .dark .text-slate-300 { color: #5a6070 !important; }
+
+    /* === 卡片与面板 === */
+    .dark .bg-slate-50 { background-color: #1a1d23 !important; }
+    .dark .shadow-sm   { box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
+    .dark .shadow-xl   { box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important; }
+    .dark .shadow-2xl  { box-shadow: 0 25px 60px rgba(0,0,0,0.6) !important; }
+
+    /* === input / select === */
+    .dark input, .dark select, .dark textarea {
+      background-color: #2a2f3a !important;
+      border-color: #383e4a !important;
+      color: #e8eaf0 !important;
+    }
+    .dark input::placeholder { color: #5a6070 !important; }
+    .dark input[type=date]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+    .dark input:focus, .dark select:focus {
+      border-color: #7c8ff5 !important;
+      box-shadow: 0 0 0 2px rgba(124,143,245,0.2) !important;
+    }
+
+    /* === 强调色背景块（柔和，不刺眼）=== */
+    .dark .bg-indigo-50  { background-color: #242840 !important; }
+    .dark .bg-emerald-50 { background-color: #1a2e28 !important; }
+    .dark .bg-red-50     { background-color: #2e1e20 !important; }
+    .dark .bg-amber-50   { background-color: #2c2415 !important; }
+    .dark .bg-blue-50    { background-color: #1a2535 !important; }
+    .dark .bg-green-50   { background-color: #1a2e28 !important; }
+
+    /* === 强调色边框 === */
+    .dark .border-indigo-100  { border-color: #363d60 !important; }
+    .dark .border-indigo-200  { border-color: #434d7a !important; }
+    .dark .border-emerald-100 { border-color: #264038 !important; }
+    .dark .border-red-100     { border-color: #4a2a2c !important; }
+    .dark .border-amber-100   { border-color: #4a3a20 !important; }
+
+    /* === 强调色文字（提亮，保持可读）=== */
+    .dark .text-indigo-600  { color: #7c8ff5 !important; }
+    .dark .text-indigo-700  { color: #9aaaf8 !important; }
+    .dark .text-emerald-600 { color: #34c98a !important; }
+    .dark .text-emerald-700 { color: #4dd99a !important; }
+    .dark .text-emerald-400 { color: #34c98a !important; }
+    .dark .text-red-500     { color: #f47068 !important; }
+    .dark .text-red-600     { color: #f47068 !important; }
+    .dark .text-red-700     { color: #f68880 !important; }
+    .dark .text-red-400     { color: #f47068 !important; }
+    .dark .text-amber-600   { color: #f59e5a !important; }
+    .dark .text-amber-400   { color: #f5b474 !important; }
+    .dark .text-blue-500    { color: #60a5fa !important; }
+    .dark .text-orange-500  { color: #f59e5a !important; }
+    .dark .text-green-600   { color: #34c98a !important; }
+
+    /* === 按钮 === */
+    .dark .bg-indigo-600  { background-color: #4f5fa8 !important; }
+    .dark .bg-indigo-600:hover { background-color: #5c6dba !important; }
+    .dark .bg-emerald-600 { background-color: #1f8a5e !important; }
+    .dark .bg-emerald-600:hover { background-color: #239970 !important; }
+
+    /* === Header === */
+    .dark header {
+      background-color: #22262f !important;
+      border-color: #383e4a !important;
+    }
+
+    /* === 导航 Tab === */
+    .dark .bg-slate-100.p-1.rounded-lg { background-color: #1a1d23 !important; }
+    .dark nav button { color: #9aa0b0 !important; }
+    .dark nav button.bg-white {
+      background-color: #2a2f3a !important;
+      color: #7c8ff5 !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+    }
+
+    /* === 表格 === */
+    .dark thead, .dark thead tr { background-color: #22262f !important; }
+    .dark tbody tr:hover         { background-color: #252930 !important; }
+    .dark .divide-y > * + *      { border-color: #2a2f3a !important; }
+    .dark .divide-slate-100 > * + * { border-color: #2a2f3a !important; }
+
+    /* === Hover 状态 === */
+    .dark .hover\:bg-slate-50:hover   { background-color: #252930 !important; }
+    .dark .hover\:bg-slate-100:hover  { background-color: #2a2f3a !important; }
+    .dark .hover\:bg-slate-200:hover  { background-color: #383e4a !important; }
+    .dark .hover\:bg-indigo-50:hover  { background-color: #2a2f4a !important; }
+    .dark .hover\:bg-red-50:hover     { background-color: #2e1e20 !important; }
+    .dark .hover\:bg-emerald-100:hover { background-color: #1f3830 !important; }
+    .dark .hover\:bg-red-100:hover    { background-color: #3a2224 !important; }
+
+    /* === 弹窗 === */
+    .dark .bg-black\/60 { background-color: rgba(0,0,0,0.75) !important; }
+    .dark .rounded-2xl.shadow-2xl { background-color: #22262f !important; }
+
+    /* === 登录页 === */
+    .dark .bg-gradient-to-br { background: #1a1d23 !important; }
+    .dark .shadow-lg.shadow-indigo-200 { box-shadow: 0 4px 20px rgba(124,143,245,0.3) !important; }
+
+    /* === 图表 === */
+    .dark .recharts-cartesian-grid line { stroke: #2a2f3a !important; }
+    .dark .recharts-text { fill: #9aa0b0 !important; }
+
+    /* === 行内信息区（bg-slate-50 小块）=== */
+    .dark .bg-slate-50.p-3,
+    .dark .bg-slate-50.p-2,
+    .dark .bg-slate-50.rounded-lg { background-color: #2a2f3a !important; }
+
+    /* === 资产切换 pill === */
+    .dark .bg-indigo-50.border-indigo-200 {
+      background-color: #242840 !important;
+      border-color: #434d7a !important;
+    }
+
+    /* === 进度条轨道 === */
+    .dark .bg-slate-100.rounded-full { background-color: #383e4a !important; }
+
+    /* === 同步状态文字 === */
+    .dark .text-emerald-500 { color: #34c98a !important; }
+
+    /* === 左侧边栏 === */
+    .dark aside {
+      background-color: #22262f !important;
+      border-color: #383e4a !important;
+    }
+    .dark aside .border-slate-100 { border-color: #2a2f3a !important; }
+    .dark aside .text-slate-400   { color: #6e7585 !important; }
+    .dark aside .text-slate-700   { color: #d4d8e8 !important; }
+    .dark aside .text-slate-500   { color: #9aa0b0 !important; }
+    .dark aside .text-slate-600   { color: #b0b8cc !important; }
+    .dark aside .hover\:bg-slate-50:hover { background-color: #2a2f3a !important; }
+    .dark aside .bg-indigo-50     { background-color: #242840 !important; }
+    .dark aside .border-indigo-200 { border-color: #434d7a !important; }
+    .dark aside .text-indigo-700  { color: #9aaaf8 !important; }
+    .dark aside .text-indigo-500  { color: #7c8ff5 !important; }
+    .dark aside .text-indigo-600  { color: #7c8ff5 !important; }
+    .dark aside .bg-indigo-500    { background-color: #4f5fa8 !important; }
+    .dark aside .hover\:bg-indigo-50:hover { background-color: #2a2f4a !important; }
+    .dark aside .border-indigo-300 { border-color: #5060a0 !important; }
+    .dark aside .border-dashed { border-color: #383e4a !important; }
   </style>
 </head>
 
@@ -418,7 +597,7 @@
       const [currentNetValue, setCurrentNetValue] = useState('');
       const [currentDataDate, setCurrentDataDate] = useState('');
       const [isClearConfirming, setIsClearConfirming] = useState(false);
-      const [manualRecord, setManualRecord] = useState({ date: '', price: '', shares: '', type: 'buy', id: null });
+      const [manualRecord, setManualRecord] = useState({ date: '', price: '', amount: '', type: 'buy', id: null });
       const [showManualForm, setShowManualForm] = useState(false);
       const [isEditMode, setIsEditMode] = useState(false);
       const [isOptimizing, setIsOptimizing] = useState(false);
@@ -687,16 +866,15 @@
       };
 
       const handleManualSubmit = () => {
-        if (!manualRecord.date || !manualRecord.price || !manualRecord.shares) { alert("请填写完整信息"); return; }
-        const price = parseFloat(manualRecord.price), shares = parseFloat(manualRecord.shares);
-        const amount = parseFloat((price * shares).toFixed(2));
-        const rec = { id: isEditMode && manualRecord.id ? manualRecord.id : Date.now(), date: safeParseDate(manualRecord.date), type: manualRecord.type, price, amount, shares };
+        if (!manualRecord.date || !manualRecord.price || !manualRecord.amount) { alert("请填写完整信息"); return; }
+        const price = parseFloat(manualRecord.price), amount = parseFloat(manualRecord.amount);
+        const rec = { id: isEditMode && manualRecord.id ? manualRecord.id : Date.now(), date: safeParseDate(manualRecord.date), type: manualRecord.type, price, amount, shares: parseFloat((amount / price).toFixed(2)) };
         if (isEditMode) updateRecords(records.map(r => r.id === rec.id ? rec : r));
         else updateRecords([rec, ...records]);
-        setShowManualForm(false); setIsEditMode(false); setManualRecord({ date: '', price: '', shares: '', type: 'buy', id: null });
+        setShowManualForm(false); setIsEditMode(false); setManualRecord({ date: '', price: '', amount: '', type: 'buy', id: null });
       };
 
-      const startEditRecord = (record) => { setManualRecord({ date: record.date.split('T')[0], price: record.price, shares: record.shares, type: record.type, id: record.id }); setIsEditMode(true); setShowManualForm(true); };
+      const startEditRecord = (record) => { setManualRecord({ date: record.date.split('T')[0], price: record.price, amount: record.amount, type: record.type, id: record.id }); setIsEditMode(true); setShowManualForm(true); };
 
       const handleFileUpload = (e) => {
         const file = e.target.files[0]; if (!file) return;
@@ -894,21 +1072,15 @@
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <input type="number" placeholder="单价" value={manualRecord.price} onChange={e => setManualRecord({ ...manualRecord, price: e.target.value })} className="border p-2 rounded text-sm w-full" />
-                        <input type="number" placeholder="份额（股/份）" value={manualRecord.shares} onChange={e => setManualRecord({ ...manualRecord, shares: e.target.value })} className="border p-2 rounded text-sm w-full" />
+                        <input type="number" placeholder="金额" value={manualRecord.amount} onChange={e => setManualRecord({ ...manualRecord, amount: e.target.value })} className="border p-2 rounded text-sm w-full" />
                       </div>
-                      {manualRecord.price && manualRecord.shares && !isNaN(parseFloat(manualRecord.price)) && !isNaN(parseFloat(manualRecord.shares)) && (
-                        <div className="text-xs text-slate-500 bg-white px-3 py-2 rounded border border-slate-200 flex justify-between items-center">
-                          <span>预计成交金额</span>
-                          <span className="font-bold text-slate-700 text-sm">¥{(parseFloat(manualRecord.price) * parseFloat(manualRecord.shares)).toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
-                        </div>
-                      )}
                       <div className="flex gap-2">
                         <Button onClick={handleManualSubmit} className="flex-1 py-1 text-xs">{isEditMode ? "确认修改" : "确认添加"}</Button>
                         <Button variant="secondary" onClick={() => { setShowManualForm(false); setIsEditMode(false); }} className="flex-1 py-1 text-xs">取消</Button>
                       </div>
                     </div>
                   ) : (
-                    <Button variant="secondary" onClick={() => { setManualRecord({ date: new Date().toISOString().split('T')[0], price: '', shares: '', type: 'buy', id: null }); setShowManualForm(true); }} className="w-full border-dashed border-2 border-slate-300 h-full min-h-[120px] hover:border-indigo-300 hover:text-indigo-600 flex flex-col gap-1">
+                    <Button variant="secondary" onClick={() => { setManualRecord({ date: new Date().toISOString().split('T')[0], price: '', amount: '', type: 'buy', id: null }); setShowManualForm(true); }} className="w-full border-dashed border-2 border-slate-300 h-full min-h-[120px] hover:border-indigo-300 hover:text-indigo-600 flex flex-col gap-1">
                       <span className="text-xl">+</span><span>添加一笔历史交易</span>
                     </Button>
                   )}
@@ -1622,6 +1794,16 @@
       const [showAddModal, setShowAddModal] = useState(false);
       const [newAssetForm, setNewAssetForm] = useState({ name: '', code: '', type: 'fund' });
       const [syncStatus, setSyncStatus] = useState('ok');
+      const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+
+      useEffect(() => {
+        if (darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('darkMode', darkMode);
+      }, [darkMode]);
 
       const handleLogin = (code, manager) => { setUserCode(code); setAssetManagerState(manager); };
 
@@ -1683,39 +1865,28 @@
       if (!activeAsset) return <div className="flex items-center justify-center h-screen"><Icon name="RefreshCw" size={24} className="animate-spin" /></div>;
 
       return (
-        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
-          <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
-            <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200">G</div>
-                  <h1 className="text-lg font-bold text-slate-800 leading-tight hidden sm:block">网格大师 Pro <span className="text-xs font-normal text-slate-400">v3.2.0 云同步</span></h1>
-                </div>
+        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col">
 
-                {/* 资产切换器 */}
-                <div className="flex items-center gap-2 ml-4 overflow-x-auto max-w-[200px] sm:max-w-md">
-                  {assetManager.assets.map(asset => (
-                    <div key={asset.id} onClick={() => setAssetManager(p => ({ ...p, activeId: asset.id }))}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs cursor-pointer border transition-all whitespace-nowrap group ${asset.id === assetManager.activeId ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'}`}>
-                      <Icon name={asset.type === 'stock' ? 'Activity' : 'PieChart'} size={12} />
-                      {asset.name}
-                      {assetManager.assets.length > 1 && <span onClick={(e) => handleDeleteAsset(e, asset.id)} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 px-1"><Icon name="X" size={12} /></span>}
-                    </div>
-                  ))}
-                  <button onClick={() => setShowAddModal(true)} className="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors" title="添加新资产"><Icon name="PlusCircle" size={16} /></button>
-                </div>
+          {/* ===== 顶部 Header（精简版，只保留品牌+右侧操作）===== */}
+          <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm flex-shrink-0">
+            <div className="px-4 h-14 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200">G</div>
+                <h1 className="text-base font-bold text-slate-800 leading-tight">网格大师 Pro <span className="text-xs font-normal text-slate-400">v3.2.0</span></h1>
               </div>
-
-              <div className="flex items-center gap-3">
-                {assetManager.assets.length > 1 && (
-                  <button onClick={loadOverviewData} className="text-xs text-indigo-600 hover:bg-indigo-50 flex items-center gap-1 px-3 py-1.5 rounded-lg border border-indigo-200 transition-colors font-medium">
-                    <Icon name="PieChart" size={14} /> 总览
-                  </button>
-                )}
+              <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Icon name="Cloud" size={14} className={syncStatus === 'err' ? 'text-red-400' : syncStatus === 'syncing' ? 'text-amber-400' : 'text-emerald-500'} />
-                  <span className="hidden sm:inline">{syncStatus === 'syncing' ? '同步中' : syncStatus === 'err' ? '同步失败' : '云端已同步'}</span>
+                  <Icon name="Cloud" size={13} className={syncStatus === 'err' ? 'text-red-400' : syncStatus === 'syncing' ? 'text-amber-400' : 'text-emerald-500'} />
+                  <span className="hidden sm:inline">{syncStatus === 'syncing' ? '同步中' : syncStatus === 'err' ? '同步失败' : '已同步'}</span>
                 </div>
+                <button onClick={() => setDarkMode(d => !d)}
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 transition-colors"
+                  title={darkMode ? '切换白天模式' : '切换夜间模式'}>
+                  {darkMode
+                    ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                  }
+                </button>
                 <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors">
                   <Icon name="LogOut" size={14} /> 退出
                 </button>
@@ -1723,9 +1894,66 @@
             </div>
           </header>
 
-          <main className="max-w-6xl mx-auto px-4 py-8">
-            <TradeDashboard key={activeAsset.id} userCode={userCode} assetId={activeAsset.id} assetConfig={activeAsset} onUpdateAssetName={updateAssetName} />
-          </main>
+          {/* ===== 主体：左侧边栏 + 右侧内容 ===== */}
+          <div className="flex flex-1 overflow-hidden">
+
+            {/* 左侧资产列表 */}
+            <aside className="w-52 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-y-auto" style={{minHeight:'calc(100vh - 56px)'}}>
+              <div className="p-3 border-b border-slate-100">
+                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">我的资产</div>
+              </div>
+
+              <nav className="flex-1 p-2 space-y-1">
+                {assetManager.assets.map(asset => {
+                  const isActive = asset.id === assetManager.activeId;
+                  return (
+                    <div key={asset.id}
+                      onClick={() => setAssetManager(p => ({ ...p, activeId: asset.id }))}
+                      className={`group flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all relative ${
+                        isActive
+                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                          : 'text-slate-600 hover:bg-slate-50 border border-transparent'
+                      }`}>
+                      {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 rounded-r-full"></div>}
+                      <Icon name={asset.type === 'stock' ? 'Activity' : 'PieChart'} size={14}
+                        className={isActive ? 'text-indigo-500' : 'text-slate-400'} />
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-xs font-medium truncate ${isActive ? 'text-indigo-700' : 'text-slate-700'}`}>{asset.name}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">{asset.code}</div>
+                      </div>
+                      {assetManager.assets.length > 1 && (
+                        <span onClick={(e) => handleDeleteAsset(e, asset.id)}
+                          className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all flex-shrink-0">
+                          <Icon name="X" size={12} />
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </nav>
+
+              {/* 底部操作 */}
+              <div className="p-2 border-t border-slate-100 space-y-1">
+                <button onClick={() => setShowAddModal(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-500 hover:bg-slate-50 hover:text-indigo-600 border border-dashed border-slate-200 hover:border-indigo-300 transition-all">
+                  <Icon name="PlusCircle" size={14} /> 添加资产
+                </button>
+                {assetManager.assets.length > 1 && (
+                  <button onClick={loadOverviewData}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-indigo-600 hover:bg-indigo-50 border border-indigo-200 transition-all font-medium">
+                    <Icon name="PieChart" size={14} /> 多资产总览
+                  </button>
+                )}
+              </div>
+            </aside>
+
+            {/* 右侧主内容 */}
+            <main className="flex-1 overflow-y-auto">
+              <div className="max-w-5xl mx-auto px-4 py-6">
+                <TradeDashboard key={activeAsset.id} userCode={userCode} assetId={activeAsset.id} assetConfig={activeAsset} onUpdateAssetName={updateAssetName} />
+              </div>
+            </main>
+          </div>
 
           {/* 多资产总览弹窗 */}
           {showOverview && (
