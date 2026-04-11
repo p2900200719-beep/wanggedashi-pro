@@ -1272,6 +1272,135 @@
                   </div>
                 </div>
               )}
+
+              {/* ========== 手机端：网格点位汇总 ========== */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icon name="Target" size={15} className="text-indigo-500" />
+                    <span className="font-bold text-slate-700 text-sm">本标的网格计划</span>
+                  </div>
+                  {nextActionAnalysis && nextActionAnalysis.actionType !== 'init' && (
+                    <span className="text-[10px] text-slate-400 font-mono">基准 {nextActionAnalysis.lastPrice?.toFixed(4)} · {config.gridSizePct}%</span>
+                  )}
+                </div>
+                {(!nextActionAnalysis || nextActionAnalysis.actionType === 'init' || records.length === 0) ? (
+                  <div className="px-4 py-6 text-center text-xs text-slate-400">暂无交易记录，无法计算点位</div>
+                ) : (() => {
+                  const lastPrice = nextActionAnalysis.lastPrice;
+                  const g = config.gridSizePct / 100;
+                  const s1 = lastPrice * (1+g), s2 = s1*(1+g), s3 = s2*(1+g);
+                  const b1 = lastPrice * (1-g), b2 = b1*(1-g), b3 = b2*(1-g);
+                  const totalShares = Math.max(0, Math.round(stats.totalShares));
+                  const sell1Shares = Math.round(totalShares * 0.33);
+                  const sell2Shares = Math.round(totalShares * 0.33);
+                  const sell3Shares = totalShares - sell1Shares - sell2Shares;
+                  const buy1Shares = b1 > 0 ? Math.round((config.minBuy||1000)/b1) : 0;
+                  const buy2Shares = b2 > 0 ? Math.round(((config.minBuy||1000)+(config.maxBuy||5000))/2/b2) : 0;
+                  const buy3Shares = b3 > 0 ? Math.round((config.maxBuy||5000)/b3) : 0;
+                  const fmt = n => n.toFixed(4);
+                  return (
+                    <div className="p-3 space-y-2">
+                      {/* 卖出区 */}
+                      <div className="text-[10px] font-semibold text-red-400 uppercase tracking-wider px-1 mb-1">卖出点位</div>
+                      {[[s3,sell3Shares,'卖3','text-red-300'],[s2,sell2Shares,'卖2','text-red-400'],[s1,sell1Shares,'卖1','text-red-600 font-bold']].map(([price,shares,label,cls])=>(
+                        <div key={label} className="flex items-center justify-between px-3 py-2 bg-red-50 rounded-xl">
+                          <span className={`text-xs ${cls==='text-red-600 font-bold'?'font-bold text-red-600':'text-red-400'}`}>{label}</span>
+                          <span className={`font-mono text-sm ${cls}`}>{fmt(price)}</span>
+                          <span className="text-xs text-slate-400 font-mono">{shares.toLocaleString()} 股</span>
+                        </div>
+                      ))}
+                      {/* 当前价 */}
+                      <div className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-xs text-slate-500 font-medium">上次成交</span>
+                        <span className="font-mono text-sm font-bold text-slate-700">{fmt(lastPrice)}</span>
+                        <span className="text-xs text-indigo-400 font-mono">持仓 {totalShares.toLocaleString()}股</span>
+                      </div>
+                      {/* 买入区 */}
+                      <div className="text-[10px] font-semibold text-emerald-500 uppercase tracking-wider px-1 mt-2 mb-1">买入点位</div>
+                      {[[b1,buy1Shares,'买1','text-emerald-600 font-bold'],[b2,buy2Shares,'买2','text-emerald-500'],[b3,buy3Shares,'买3','text-emerald-400']].map(([price,shares,label,cls])=>(
+                        <div key={label} className="flex items-center justify-between px-3 py-2 bg-emerald-50 rounded-xl">
+                          <span className={`text-xs ${cls.includes('font-bold')?'font-bold text-emerald-600':'text-emerald-400'}`}>{label}</span>
+                          <span className={`font-mono text-sm ${cls}`}>{fmt(price)}</span>
+                          <span className="text-xs text-slate-400 font-mono">{shares.toLocaleString()} 股</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* ========== 手机端：导入导出 ========== */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+                  <Icon name="Save" size={15} className="text-indigo-500" />
+                  <span className="font-bold text-slate-700 text-sm">导入 / 导出</span>
+                </div>
+                <div className="p-3 space-y-2">
+                  {/* 批量导入（全标的）*/}
+                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1 mb-1">全标的批量操作</div>
+                  <button onClick={() => downloadBatchTemplate(assetManager.assets)}
+                    className="w-full flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 text-left">
+                    <Icon name="Download" size={18} className="text-slate-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-medium text-slate-700">下载批量导入模板</div>
+                      <div className="text-[10px] text-slate-400">含全部标的代码，填入后批量上传</div>
+                    </div>
+                  </button>
+                  <label className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left cursor-pointer ${isBatchImporting ? 'bg-indigo-50 border-indigo-100' : 'bg-indigo-50 border-indigo-200'}`}>
+                    <Icon name="Upload" size={18} className={`flex-shrink-0 ${isBatchImporting ? 'text-indigo-300 animate-spin' : 'text-indigo-500'}`} />
+                    <div>
+                      <div className="text-sm font-medium text-indigo-700">{isBatchImporting ? '正在导入...' : '一键批量导入'}</div>
+                      <div className="text-[10px] text-indigo-400">自动匹配标的，智能去重</div>
+                    </div>
+                    <input type="file" accept=".csv,.txt" className="hidden"
+                      onChange={e => { if(e.target.files[0]) handleBatchImport(e.target.files[0]); e.target.value=''; }}
+                      disabled={isBatchImporting} />
+                  </label>
+                  {/* 批量导入结果 */}
+                  {batchImportResult && (
+                    <div className="px-3 py-2.5 bg-emerald-50 rounded-xl border border-emerald-100 text-xs space-y-1">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-emerald-700 flex items-center gap-1"><Icon name="CheckCircle" size={12}/> 导入完成</span>
+                        <button onClick={() => setBatchImportResult(null)} className="text-slate-400"><Icon name="X" size={12}/></button>
+                      </div>
+                      {batchImportResult.matched.map((m,i) => (
+                        <div key={i} className="flex justify-between text-slate-600">
+                          <span>{m.name}</span><span className="text-emerald-600 font-medium">+{m.added}笔{m.skipped>0?` (跳过${m.skipped})`:''}</span>
+                        </div>
+                      ))}
+                      {batchImportResult.unmatched.length > 0 && (
+                        <div className="text-amber-600 pt-1 border-t border-emerald-200">未匹配：{batchImportResult.unmatched.map(u=>u.code).join(', ')}</div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 当前标的导入导出 */}
+                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1 mt-3 mb-1">当前标的操作</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="flex items-center justify-center gap-2 py-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
+                      <Icon name="Upload" size={16} className="text-slate-400" />
+                      <span className="text-sm text-slate-600 font-medium">导入</span>
+                      <input type="file" accept=".csv,.json,.txt" className="hidden" onChange={handleFileUpload} />
+                    </label>
+                    <button onClick={() => {
+                      const blob = new Blob([JSON.stringify(records, null, 2)], {type:'application/json'});
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a'); a.href = url;
+                      a.download = `GridTrader_${config.fundCode}_${new Date().toISOString().split('T')[0]}.json`;
+                      a.click();
+                    }} className="flex items-center justify-center gap-2 py-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <Icon name="Download" size={16} className="text-slate-400" />
+                      <span className="text-sm text-slate-600 font-medium">导出</span>
+                    </button>
+                  </div>
+                  <button onClick={downloadCSVTemplate}
+                    className="w-full flex items-center gap-2 justify-center py-2.5 text-xs text-blue-500 border border-blue-100 bg-blue-50 rounded-xl">
+                    <Icon name="FileSpreadsheet" size={13}/> 下载单标的导入模板
+                  </button>
+                </div>
+              </div>
+
             </div>
 
             {/* ========== 桌面端看板（原有布局）========== */}
