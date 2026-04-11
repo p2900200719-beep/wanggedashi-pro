@@ -2368,62 +2368,103 @@
                           <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
                             <Icon name="Target" size={14} className="text-indigo-500" />
                             <span className="text-sm font-bold text-slate-700">全标的网格点位汇总</span>
-                            <span className="text-xs text-slate-400 ml-1">基于最新成交价自动计算</span>
+                            <span className="text-xs text-slate-400 ml-1">价格 / 股数</span>
                           </div>
                           <div className="overflow-x-auto">
                             <table className="w-full text-xs">
                               <thead>
                                 <tr className="bg-slate-50 text-slate-400 border-b border-slate-100">
-                                  <th className="px-4 py-2.5 text-left font-medium">标的</th>
-                                  <th className="px-3 py-2.5 text-center font-medium text-red-400">卖3</th>
-                                  <th className="px-3 py-2.5 text-center font-medium text-red-500">卖2</th>
-                                  <th className="px-3 py-2.5 text-center font-medium text-red-600">卖1</th>
-                                  <th className="px-3 py-2.5 text-center font-medium text-slate-400">上次成交</th>
-                                  <th className="px-3 py-2.5 text-center font-medium text-emerald-600">买1</th>
-                                  <th className="px-3 py-2.5 text-center font-medium text-emerald-500">买2</th>
-                                  <th className="px-3 py-2.5 text-center font-medium text-emerald-400">买3</th>
-                                  <th className="px-3 py-2.5 text-center font-medium text-slate-400">网格</th>
+                                  <th className="px-4 py-3 text-left font-medium">标的</th>
+                                  <th className="px-3 py-3 text-center font-medium text-red-300">卖3</th>
+                                  <th className="px-3 py-3 text-center font-medium text-red-400">卖2</th>
+                                  <th className="px-3 py-3 text-center font-medium text-red-600">卖1</th>
+                                  <th className="px-3 py-3 text-center font-medium text-slate-400">上次成交</th>
+                                  <th className="px-3 py-3 text-center font-medium text-emerald-600">买1</th>
+                                  <th className="px-3 py-3 text-center font-medium text-emerald-400">买2</th>
+                                  <th className="px-3 py-3 text-center font-medium text-emerald-300">买3</th>
+                                  <th className="px-3 py-3 text-center font-medium text-slate-400">网格</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-100">
                                 {sortedAssets.map(({ asset, config, records }) => {
                                   if (!config || records.length === 0) return (
                                     <tr key={asset.id} className="hover:bg-slate-50">
-                                      <td className="px-4 py-2.5">
+                                      <td className="px-4 py-3">
                                         <div className="font-medium text-slate-700 truncate max-w-[100px]">{asset.name}</div>
                                         <div className="text-slate-400 font-mono text-[10px]">{config?.fundCode}</div>
                                       </td>
-                                      <td colSpan={7} className="text-center text-slate-300 py-2.5">暂无交易记录</td>
-                                      <td className="px-3 py-2.5 text-center text-slate-400 font-mono">{config?.gridSizePct}%</td>
+                                      <td colSpan={7} className="text-center text-slate-300 py-3">暂无交易记录</td>
+                                      <td className="px-3 py-3 text-center text-slate-400 font-mono">{config?.gridSizePct}%</td>
                                     </tr>
                                   );
-                                  const sortedRec = [...records].sort((a,b) => new Date(b.date) - new Date(a.date));
-                                  const lastPrice = sortedRec[0].price;
+
+                                  // ── 计算持仓股数 ──
+                                  const sortedRec = [...records].sort((a,b) => new Date(a.date) - new Date(b.date));
+                                  let totalShares = 0, costBasis = 0;
+                                  sortedRec.forEach(r => {
+                                    if (r.type === 'buy') { totalShares += r.shares; costBasis += r.amount; }
+                                    else { const avg = totalShares > 0 ? costBasis / totalShares : 0; costBasis -= r.shares * avg; totalShares -= r.shares; }
+                                  });
+                                  totalShares = Math.max(0, Math.round(totalShares));
+
+                                  const lastTrade = [...records].sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+                                  const lastPrice = lastTrade.price;
                                   const g = (config.gridSizePct || 5) / 100;
-                                  // 卖点：向上3档
+
+                                  // 卖点（向上3档）
                                   const s1 = lastPrice * (1 + g);
-                                  const s2 = lastPrice * (1 + g) * (1 + g);
-                                  const s3 = lastPrice * (1 + g) * (1 + g) * (1 + g);
-                                  // 买点：向下3档
+                                  const s2 = s1 * (1 + g);
+                                  const s3 = s2 * (1 + g);
+                                  // 买点（向下3档）
                                   const b1 = lastPrice * (1 - g);
-                                  const b2 = lastPrice * (1 - g) * (1 - g);
-                                  const b3 = lastPrice * (1 - g) * (1 - g) * (1 - g);
-                                  const fmt = (n) => n.toFixed(4);
+                                  const b2 = b1 * (1 - g);
+                                  const b3 = b2 * (1 - g);
+
+                                  // 卖出股数：按比例递进（卖1=持仓33%，卖2=再33%，卖3=剩余）
+                                  const sellShares1 = Math.round(totalShares * 0.33);
+                                  const sellShares2 = Math.round(totalShares * 0.33);
+                                  const sellShares3 = totalShares - sellShares1 - sellShares2;
+
+                                  // 买入股数：按配置 minBuy/maxBuy 计算（梯次加仓）
+                                  const buyAmt1 = config.minBuy || 1000;
+                                  const buyAmt2 = Math.round(((config.minBuy || 1000) + (config.maxBuy || 5000)) / 2);
+                                  const buyAmt3 = config.maxBuy || 5000;
+                                  const buyShares1 = b1 > 0 ? Math.round(buyAmt1 / b1) : 0;
+                                  const buyShares2 = b2 > 0 ? Math.round(buyAmt2 / b2) : 0;
+                                  const buyShares3 = b3 > 0 ? Math.round(buyAmt3 / b3) : 0;
+
+                                  const fmtP = (n) => n.toFixed(4);
+                                  const fmtS = (n) => n > 0 ? n.toLocaleString() : '—';
+
+                                  // 价格+股数 单元格组件
+                                  const Cell = ({ price, shares, colorClass, boldPrice = false, bg = '' }) => (
+                                    <td className={`px-3 py-3 text-center ${bg}`}>
+                                      <div className={`font-mono ${boldPrice ? 'font-bold' : ''} ${colorClass} leading-tight`}>{fmtP(price)}</div>
+                                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">{fmtS(shares)}股</div>
+                                    </td>
+                                  );
+
                                   return (
-                                    <tr key={asset.id} className="hover:bg-slate-50 cursor-pointer"
+                                    <tr key={asset.id} className="hover:bg-slate-50 cursor-pointer transition-colors"
                                       onClick={() => { setAssetManager(p => ({...p, activeId: asset.id})); setShowOverview(false); }}>
-                                      <td className="px-4 py-2.5">
-                                        <div className="font-medium text-slate-700 truncate max-w-[100px]">{asset.name}</div>
+                                      <td className="px-4 py-3">
+                                        <div className="font-medium text-slate-700 truncate max-w-[90px]">{asset.name}</div>
                                         <div className="text-slate-400 font-mono text-[10px]">{config.fundCode}</div>
+                                        <div className="text-[10px] text-indigo-400 mt-0.5">持仓 {totalShares.toLocaleString()}股</div>
                                       </td>
-                                      <td className="px-3 py-2.5 text-center font-mono text-red-300">{fmt(s3)}</td>
-                                      <td className="px-3 py-2.5 text-center font-mono text-red-400">{fmt(s2)}</td>
-                                      <td className="px-3 py-2.5 text-center font-mono font-bold text-red-500">{fmt(s1)}</td>
-                                      <td className="px-3 py-2.5 text-center font-mono bg-slate-50 text-slate-500 font-bold">{fmt(lastPrice)}</td>
-                                      <td className="px-3 py-2.5 text-center font-mono font-bold text-emerald-600">{fmt(b1)}</td>
-                                      <td className="px-3 py-2.5 text-center font-mono text-emerald-500">{fmt(b2)}</td>
-                                      <td className="px-3 py-2.5 text-center font-mono text-emerald-400">{fmt(b3)}</td>
-                                      <td className="px-3 py-2.5 text-center text-slate-400 font-mono">{config.gridSizePct}%</td>
+                                      <Cell price={s3} shares={sellShares3} colorClass="text-red-300" />
+                                      <Cell price={s2} shares={sellShares2} colorClass="text-red-400" />
+                                      <Cell price={s1} shares={sellShares1} colorClass="text-red-600" boldPrice />
+                                      <td className="px-3 py-3 text-center bg-slate-50">
+                                        <div className="font-mono font-bold text-slate-600 leading-tight">{fmtP(lastPrice)}</div>
+                                        <div className="text-[10px] text-slate-400 mt-0.5">成交价</div>
+                                      </td>
+                                      <Cell price={b1} shares={buyShares1} colorClass="text-emerald-600" boldPrice />
+                                      <Cell price={b2} shares={buyShares2} colorClass="text-emerald-500" />
+                                      <Cell price={b3} shares={buyShares3} colorClass="text-emerald-400" />
+                                      <td className="px-3 py-3 text-center">
+                                        <div className="text-slate-400 font-mono">{config.gridSizePct}%</div>
+                                      </td>
                                     </tr>
                                   );
                                 })}
