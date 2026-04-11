@@ -649,7 +649,7 @@
     // =============================================
     // 仪表盘（单资产）
     // =============================================
-    function TradeDashboard({ userCode, assetId, assetConfig, onUpdateAssetName }) {
+    function TradeDashboard({ userCode, assetId, assetConfig, onUpdateAssetName, isBatchImporting, batchImportResult, setBatchImportResult, handleBatchImport, downloadBatchTemplate, assetManagerAssets }) {
       const [activeTab, setActiveTab] = useState('dashboard');
 
       // 注册全局 tab 切换（供手机端底部导航调用）
@@ -1356,7 +1356,7 @@
                 <div className="p-3 space-y-2">
                   {/* 批量导入（全标的）*/}
                   <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1 mb-1">全标的批量操作</div>
-                  <button onClick={() => downloadBatchTemplate(assetManager.assets)}
+                  <button onClick={() => downloadBatchTemplate(assetManagerAssets || [])}
                     className="w-full flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 text-left">
                     <Icon name="Download" size={18} className="text-slate-400 flex-shrink-0" />
                     <div>
@@ -2520,7 +2520,10 @@
             {/* 右侧内容（独立滚动）*/}
             <main className="flex-1 overflow-y-auto">
               <div className="max-w-5xl mx-auto px-4 py-6">
-                <TradeDashboard key={activeAsset.id} userCode={userCode} assetId={activeAsset.id} assetConfig={activeAsset} onUpdateAssetName={updateAssetName} />
+                <TradeDashboard key={activeAsset.id} userCode={userCode} assetId={activeAsset.id} assetConfig={activeAsset} onUpdateAssetName={updateAssetName}
+                  isBatchImporting={isBatchImporting} batchImportResult={batchImportResult}
+                  setBatchImportResult={setBatchImportResult} handleBatchImport={handleBatchImport}
+                  downloadBatchTemplate={downloadBatchTemplate} assetManagerAssets={assetManager.assets} />
               </div>
             </main>
           </div>
