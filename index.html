@@ -466,28 +466,79 @@
       });
     };
 
+    // 单标的模板下载
     const downloadCSVTemplate = () => {
-      const headers = "\uFEFF日期(YYYY-MM-DD),类型(buy/sell),单价,金额\n";
-      const example = "2024-01-15,buy,1.2500,5000\n2024-02-20,sell,1.3500,2000";
+      const headers = "\uFEFF日期(YYYY-MM-DD),类型(buy/sell),单价,份额\n";
+      const example = "2024-01-15,buy,1.2500,4000\n2024-02-20,sell,1.3500,1500";
       const blob = new Blob([headers + example], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url; link.download = "网格交易导入模板.csv"; link.click();
+      const link = document.createElement('a'); link.href = url; link.download = "单标的导入模板.csv"; link.click();
     };
 
+    // 批量导入模板下载（多标的）
+    const downloadBatchTemplate = (assets) => {
+      let csv = "\uFEFF标的代码,标的名称,日期(YYYY-MM-DD),类型(buy/sell),单价,份额\n";
+      if (assets && assets.length > 0) {
+        assets.forEach(a => {
+          csv += `${a.code},${a.name},2024-01-15,buy,1.2500,4000\n`;
+          csv += `${a.code},${a.name},2024-02-20,sell,1.3500,1500\n`;
+        });
+      } else {
+        csv += "513650,标普500ETF南方,2024-01-15,buy,1.2500,4000\n";
+        csv += "513650,标普500ETF南方,2024-02-20,sell,1.3500,1500\n";
+        csv += "159852,软件ETF嘉实,2024-01-18,buy,0.8800,6000\n";
+      }
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a'); link.href = url; link.download = "批量导入模板.csv"; link.click();
+    };
+
+    // 解析单标的 CSV（单价+份额）
     const parseCSV = (text) => {
       const lines = text.split('\n'); const result = [];
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim(); if (!line) continue;
-        const parts = line.replace('，', ',').split(',');
+        const parts = line.replace(/，/g, ',').split(',');
         if (parts.length >= 4) {
           const dateStr = parts[0].trim(); const typeStr = parts[1].trim().toLowerCase();
-          const price = parseFloat(parts[2].trim()); const amount = parseFloat(parts[3].trim());
+          const price = parseFloat(parts[2].trim()); const sharesOrAmount = parseFloat(parts[3].trim());
           const type = (typeStr === '卖出' || typeStr === 'sell') ? 'sell' : 'buy';
-          if (!isNaN(price) && !isNaN(amount)) result.push({ id: Date.now() + i, date: safeParseDate(dateStr), type, price, amount, shares: parseFloat((amount / price).toFixed(2)) });
+          if (!isNaN(price) && !isNaN(sharesOrAmount)) {
+            // 兼容旧版（金额）和新版（份额）：金额通常远大于份额
+            const isAmount = sharesOrAmount > price * 100;
+            const shares = isAmount ? parseFloat((sharesOrAmount / price).toFixed(2)) : sharesOrAmount;
+            const amount = isAmount ? sharesOrAmount : parseFloat((price * sharesOrAmount).toFixed(2));
+            result.push({ id: Date.now() + i, date: safeParseDate(dateStr), type, price, amount, shares });
+          }
         }
       }
       return result;
+    };
+
+    // 解析批量 CSV（含标的代码列）→ 按代码分组
+    const parseBatchCSV = (text) => {
+      const lines = text.split('\n');
+      const byCode = {}; // { code: [records] }
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim(); if (!line) continue;
+        const parts = line.replace(/，/g, ',').split(',');
+        if (parts.length >= 6) {
+          const code     = parts[0].trim();
+          // parts[1] = name (忽略)
+          const dateStr  = parts[2].trim();
+          const typeStr  = parts[3].trim().toLowerCase();
+          const price    = parseFloat(parts[4].trim());
+          const sharesRaw = parseFloat(parts[5].trim());
+          if (!code || isNaN(price) || isNaN(sharesRaw)) continue;
+          const type   = (typeStr === '卖出' || typeStr === 'sell') ? 'sell' : 'buy';
+          const isAmount = sharesRaw > price * 100;
+          const shares = isAmount ? parseFloat((sharesRaw / price).toFixed(2)) : sharesRaw;
+          const amount = isAmount ? sharesRaw : parseFloat((price * sharesRaw).toFixed(2));
+          if (!byCode[code]) byCode[code] = [];
+          byCode[code].push({ id: Date.now() + i * 100 + Math.random(), date: safeParseDate(dateStr), type, price, amount, shares });
+        }
+      }
+      return byCode;
     };
 
     // =============================================
@@ -1989,6 +2040,37 @@
       const [showOverview, setShowOverview] = useState(false);
       const [overviewData, setOverviewData] = useState({});
       const [overviewSortBy, setOverviewSortBy] = useState('name');
+      const [batchImportResult, setBatchImportResult] = useState(null); // { matched, unmatched }
+      const [isBatchImporting, setIsBatchImporting] = useState(false);
+
+      // 批量导入处理
+      const handleBatchImport = async (file) => {
+        if (!file) return;
+        setIsBatchImporting(true);
+        const text = await file.text();
+        const byCode = parseBatchCSV(text);
+        if (Object.keys(byCode).length === 0) {
+          alert('未解析到有效记录，请检查文件格式（需包含6列：代码,名称,日期,类型,单价,份额）');
+          setIsBatchImporting(false); return;
+        }
+        const matched = [], unmatched = [];
+        for (const [code, newRecs] of Object.entries(byCode)) {
+          const asset = assetManager.assets.find(a => a.code === code || a.code === String(code));
+          if (!asset) { unmatched.push({ code, count: newRecs.length }); continue; }
+          try {
+            const existing = await db.getRecords(userCode, asset.id) || [];
+            const existingIds = new Set(existing.map(r => r.date + '_' + r.price + '_' + r.shares));
+            const toAdd = newRecs.filter(r => !existingIds.has(r.date.split('T')[0] + '_' + r.price + '_' + r.shares));
+            const merged = [...toAdd, ...existing];
+            await db.setRecords(userCode, asset.id, merged);
+            matched.push({ name: asset.name, code, added: toAdd.length, skipped: newRecs.length - toAdd.length });
+          } catch(e) { unmatched.push({ code, count: newRecs.length, error: e.message }); }
+        }
+        setBatchImportResult({ matched, unmatched });
+        setIsBatchImporting(false);
+        // 刷新总览数据
+        await loadOverviewData();
+      };
 
       const loadOverviewData = async () => {
         setShowOverview(true);
@@ -2145,10 +2227,56 @@
           {showOverview && (
             <div className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center p-4 overflow-y-auto">
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8">
-                <div className="p-6 border-b flex justify-between items-center">
-                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Icon name="PieChart" size={20} className="text-indigo-500" /> 多资产收益总览</h2>
-                  <button onClick={() => setShowOverview(false)} className="text-slate-400 hover:text-slate-600 p-1"><Icon name="X" size={20} /></button>
+                <div className="p-4 border-b flex justify-between items-center flex-wrap gap-3">
+                  <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Icon name="PieChart" size={18} className="text-indigo-500" /> 多资产收益总览</h2>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => downloadBatchTemplate(assetManager.assets)}
+                      className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors">
+                      <Icon name="Download" size={13} /> 下载批量模板
+                    </button>
+                    <label className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors cursor-pointer font-medium ${isBatchImporting ? 'border-indigo-200 bg-indigo-50 text-indigo-400' : 'border-indigo-300 bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}>
+                      {isBatchImporting
+                        ? <><Icon name="RefreshCw" size={13} className="animate-spin" /> 导入中...</>
+                        : <><Icon name="Upload" size={13} /> 一键批量导入</>
+                      }
+                      <input type="file" accept=".csv,.txt" className="hidden"
+                        onChange={e => { if(e.target.files[0]) handleBatchImport(e.target.files[0]); e.target.value=''; }}
+                        disabled={isBatchImporting} />
+                    </label>
+                    <button onClick={() => setShowOverview(false)} className="text-slate-400 hover:text-slate-600 p-1"><Icon name="X" size={18} /></button>
+                  </div>
                 </div>
+
+                {/* 批量导入结果提示 */}
+                {batchImportResult && (
+                  <div className="mx-6 mt-4 rounded-xl border overflow-hidden">
+                    <div className="px-4 py-2.5 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
+                      <span className="text-sm font-bold text-emerald-700 flex items-center gap-2"><Icon name="CheckCircle" size={15} /> 导入完成</span>
+                      <button onClick={() => setBatchImportResult(null)} className="text-slate-400 hover:text-slate-600"><Icon name="X" size={14} /></button>
+                    </div>
+                    <div className="p-3 space-y-1.5 bg-white">
+                      {batchImportResult.matched.map((m, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
+                          <span className="text-slate-600 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+                            {m.name} <span className="text-slate-400 font-mono">({m.code})</span>
+                          </span>
+                          <span className="text-emerald-600 font-medium">新增 {m.added} 笔
+                            {m.skipped > 0 && <span className="text-slate-400 ml-1">· 跳过重复 {m.skipped}</span>}
+                          </span>
+                        </div>
+                      ))}
+                      {batchImportResult.unmatched.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-slate-100">
+                          <div className="text-xs text-amber-600 font-medium mb-1">以下代码未找到对应资产：</div>
+                          {batchImportResult.unmatched.map((u, i) => (
+                            <div key={i} className="text-xs text-slate-400">{u.code}（{u.count} 条）{u.error ? ' - ' + u.error : ''}</div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="p-6 space-y-6">
                   {(() => {
