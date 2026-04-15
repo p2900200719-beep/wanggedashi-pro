@@ -270,11 +270,13 @@
           } catch(_) {}
 
           const cbK = `cb_sk_${uid}`;
+          console.log(`[JSONP] 请求K线: secid=${secId}, cb=${cbK}`);
           const kRes = await jsonp(
             `https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=${cbK}&secid=${secId}&fields1=f1&fields2=f51,f53,f57,f58&klt=101&fqt=1&end=20500101&lmt=1500`,
             cbK
           );
 
+          console.log(`[JSONP] ${secId} 响应:`, kRes?.data?.klines?.length, '条');
           if (!kRes?.data?.klines?.length) throw new Error('empty');
 
           const data = kRes.data.klines.map(line => {
@@ -2185,11 +2187,13 @@
         setLoadingCodes(prev => ({ ...prev, [code]: true }));
         setFetchErrors(prev => { const n = {...prev}; delete n[code]; return n; });
         try {
+          console.log(`[轮动] 开始拉取 ${code}...`);
           const result = await fetchStockRealData(code);
+          console.log(`[轮动] ${code} 成功，数据条数: ${result.data.length}`);
           setEtfData(prev => ({ ...prev, [code]: { name: result.name || name, data: result.data } }));
         } catch(e) {
+          console.error(`[轮动] ${code} 失败:`, e);
           setFetchErrors(prev => ({ ...prev, [code]: true }));
-          console.warn(`ETF ${code} 数据拉取失败:`, e);
         }
         setLoadingCodes(prev => ({ ...prev, [code]: false }));
       };
