@@ -32,6 +32,27 @@
     .sync-dot.syncing { background:#f59e0b; animation: spin 1s linear infinite; border-radius:0; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
     .sync-dot.ok { background:#10b981; }
     .sync-dot.err { background:#ef4444; }
+    /* 左侧资产栏 — 全端显示 */
+    .sidebar { width: 200px; flex-shrink: 0; transition: width .2s; }
+    @media (max-width: 639px) { .sidebar { width: 56px; } }   /* 手机：图标条 */
+    @media (min-width: 640px) and (max-width: 1023px) { .sidebar { width: 160px; } } /* 平板：窄栏 */
+    .sidebar-inner { position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; padding: 12px 8px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; }
+    .sidebar-inner::-webkit-scrollbar { width: 3px; }
+    .sidebar-inner::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+    .asset-item { display: flex; align-items: center; gap: 8px; padding: 8px 8px; border-radius: 10px; cursor: pointer; transition: all .15s; border: 1px solid transparent; margin-bottom: 3px; min-height: 40px; }
+    .asset-item:hover { background: #f8fafc; border-color: #e2e8f0; }
+    .asset-item.active { background: #eef2ff; border-color: #c7d2fe; }
+    .asset-item .asset-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .asset-del { opacity: 0; transition: opacity .15s; padding: 2px; border-radius: 4px; flex-shrink: 0; }
+    .asset-item:hover .asset-del { opacity: 1; }
+    /* 手机：只显示色点，隐藏文字 */
+    @media (max-width: 639px) {
+      .asset-item { justify-content: center; padding: 8px 0; }
+      .asset-label { display: none; }
+      .asset-del { display: none; }
+      .sidebar-label { display: none; }
+      .sidebar-actions { display: none; }
+    }
   </style>
 </head>
 
@@ -1637,26 +1658,157 @@
     const PRESET_ETF_GROUPS = [
       { group: '宽基指数', color: 'indigo', items: [
         { code: '510300', name: '沪深300ETF' },
-        { code: '510500', name: '中证500ETF' },
-        { code: '159915', name: '创业板ETF' },
-        { code: '588000', name: '科创50ETF' },
+        { code: '510310', name: '沪深300ETF易方达' },
+        { code: '159919', name: '沪深300ETF嘉实' },
         { code: '510050', name: '上证50ETF' },
+        { code: '510500', name: '中证500ETF' },
+        { code: '159922', name: '中证500ETF嘉实' },
+        { code: '510510', name: '中证500ETF华夏' },
+        { code: '159915', name: '创业板ETF' },
+        { code: '159952', name: '创业板ETF嘉实' },
+        { code: '588000', name: '科创50ETF' },
+        { code: '588080', name: '科创50ETF易方达' },
         { code: '159922', name: '中证1000ETF' },
+        { code: '560010', name: '中证1000ETF华夏' },
+        { code: '159901', name: '深证100ETF' },
+        { code: '510180', name: '上证180ETF' },
+        { code: '510330', name: '沪深300ETF富国' },
+        { code: '512010', name: '中小盘ETF' },
+        { code: '159949', name: '创业板50ETF' },
+        { code: '159967', name: '科创创业50ETF' },
+        { code: '588200', name: '科创100ETF' },
       ]},
-      { group: '行业主题', color: 'violet', items: [
-        { code: '512010', name: '医疗ETF' },
-        { code: '512690', name: '酒ETF' },
+      { group: '科技/TMT', color: 'violet', items: [
         { code: '512760', name: '芯片ETF' },
+        { code: '159995', name: '芯片ETF华夏' },
         { code: '159819', name: '人工智能ETF' },
+        { code: '515370', name: 'AI算力ETF' },
+        { code: '516510', name: '互联网ETF' },
+        { code: '515230', name: '数字经济ETF' },
+        { code: '159605', name: '半导体ETF' },
+        { code: '512480', name: '半导体ETF国联' },
+        { code: '159998', name: '芯片ETF博时' },
         { code: '516160', name: '新能源车ETF' },
+        { code: '159806', name: '新能源车ETF鹏华' },
         { code: '515030', name: '新能源ETF' },
-        { code: '512800', name: '银行ETF' },
-        { code: '512660', name: '军工ETF' },
+        { code: '159781', name: '新能源ETF易方达' },
+        { code: '562790', name: '光伏ETF' },
+        { code: '516220', name: '储能ETF' },
+        { code: '515220', name: '电池ETF' },
+        { code: '159869', name: '5G通信ETF' },
+        { code: '159660', name: '云计算ETF' },
+        { code: '516090', name: '信息技术ETF' },
+        { code: '515580', name: '科技龙头ETF' },
       ]},
-      { group: '红利/Smart Beta', color: 'amber', items: [
+      { group: '医疗/生物', color: 'teal', items: [
+        { code: '512010', name: '医疗ETF' },
+        { code: '159929', name: '医疗ETF华宝' },
+        { code: '512170', name: '医疗ETF华夏' },
+        { code: '512660', name: '医药生物ETF' },
+        { code: '159929', name: '医药ETF' },
+        { code: '515120', name: '医药龙头ETF' },
+        { code: '159992', name: 'CXO创新药ETF' },
+        { code: '516320', name: '创新药ETF' },
+        { code: '159836', name: '基因工程ETF' },
+        { code: '512290', name: '生物医药ETF' },
+        { code: '512580', name: '中药ETF' },
+        { code: '159890', name: '疫苗ETF' },
+      ]},
+      { group: '消费/食品', color: 'amber', items: [
+        { code: '512690', name: '酒ETF' },
+        { code: '159997', name: '白酒ETF' },
+        { code: '515170', name: '消费ETF' },
+        { code: '159928', name: '消费ETF华夏' },
+        { code: '159847', name: '食品饮料ETF' },
+        { code: '159843', name: '中证消费ETF' },
+        { code: '515650', name: '品牌消费ETF' },
+        { code: '515900', name: '可选消费ETF' },
+        { code: '159869', name: '农业ETF' },
+        { code: '516670', name: '畜牧养殖ETF' },
+      ]},
+      { group: '金融/地产', color: 'blue', items: [
+        { code: '512800', name: '银行ETF' },
+        { code: '159931', name: '银行ETF华宝' },
+        { code: '512990', name: '证券ETF' },
+        { code: '512880', name: '证券ETF华宝' },
+        { code: '159952', name: '券商ETF' },
+        { code: '515000', name: '房地产ETF' },
+        { code: '512600', name: '主要消费ETF' },
+        { code: '159940', name: '金融ETF' },
+        { code: '159905', name: '基建ETF' },
+        { code: '516950', name: '保险ETF' },
+      ]},
+      { group: '工业/周期', color: 'slate', items: [
+        { code: '512660', name: '军工ETF' },
+        { code: '516950', name: '军工ETF鹏华' },
+        { code: '516670', name: '钢铁ETF' },
+        { code: '512120', name: '煤炭ETF' },
+        { code: '159628', name: '有色金属ETF' },
+        { code: '159980', name: '有色ETF' },
+        { code: '562860', name: '黄金矿业ETF' },
+        { code: '515230', name: '化工ETF' },
+        { code: '159896', name: '建材ETF' },
+        { code: '516030', name: '交通运输ETF' },
+        { code: '516160', name: '物流ETF' },
+        { code: '159967', name: '环保ETF' },
+        { code: '515550', name: '电力ETF' },
+      ]},
+      { group: '红利/价值', color: 'orange', items: [
         { code: '515880', name: '央企红利ETF' },
         { code: '159905', name: '红利ETF' },
         { code: '515700', name: '中证红利ETF' },
+        { code: '512890', name: '红利低波ETF' },
+        { code: '563020', name: '中证红利低波ETF' },
+        { code: '159758', name: '港股红利ETF' },
+        { code: '517180', name: '红利潜力ETF' },
+        { code: '159531', name: '中央企业ETF' },
+        { code: '510030', name: '价值ETF' },
+      ]},
+      { group: 'Smart Beta', color: 'green', items: [
+        { code: '512890', name: '低波红利ETF' },
+        { code: '159629', name: '质量ETF' },
+        { code: '516350', name: '基本面50ETF' },
+        { code: '510850', name: '央企ETF' },
+        { code: '515060', name: '质量成长ETF' },
+        { code: '563000', name: 'ESG领先ETF' },
+        { code: '159639', name: '成长ETF' },
+        { code: '159633', name: '价值ETF深' },
+      ]},
+      { group: '债券/固收', color: 'gray', items: [
+        { code: '511010', name: '国债ETF' },
+        { code: '511020', name: '国债ETF10Y' },
+        { code: '511260', name: '十年国债ETF' },
+        { code: '511090', name: '30年国债ETF' },
+        { code: '511220', name: '国开ETF' },
+        { code: '511190', name: '城投债ETF' },
+        { code: '511380', name: '信用债ETF' },
+        { code: '511030', name: '可转债ETF' },
+        { code: '511060', name: '中债短融ETF' },
+      ]},
+      { group: '商品', color: 'yellow', items: [
+        { code: '518880', name: '黄金ETF华安' },
+        { code: '159934', name: '黄金ETF易方达' },
+        { code: '159937', name: '黄金ETF博时' },
+        { code: '159980', name: '有色金属ETF' },
+        { code: '161226', name: '白银LOF' },
+        { code: '162411', name: '华宝油气LOF' },
+        { code: '160416', name: '华安油气LOF' },
+        { code: '159981', name: '能源化工ETF' },
+        { code: '159699', name: '豆粕ETF' },
+        { code: '159609', name: '玉米ETF' },
+      ]},
+      { group: 'QDII/港股', color: 'pink', items: [
+        { code: '513050', name: '中概互联ETF' },
+        { code: '513010', name: '恒生ETF' },
+        { code: '513060', name: '恒生科技ETF' },
+        { code: '159605', name: '港股通ETF' },
+        { code: '513180', name: '恒生医疗ETF' },
+        { code: '513500', name: '标普500ETF' },
+        { code: '513100', name: '纳斯达克ETF' },
+        { code: '513520', name: '日经ETF' },
+        { code: '513090', name: '德国ETF' },
+        { code: '159920', name: '恒生H股ETF' },
+        { code: '517520', name: '纳斯达克科技ETF' },
       ]},
     ];
 
@@ -2986,71 +3138,137 @@
 
       return (
         <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
+          {/* ── 顶部 Header ── */}
           <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
-            <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200">G</div>
-                  <h1 className="text-lg font-bold text-slate-800 leading-tight hidden sm:block">网格大师 Pro <span className="text-xs font-normal text-slate-400">v3.2.0 云同步</span></h1>
-                </div>
-
-                {/* 资产切换器 */}
-                <div className="flex items-center gap-2 ml-4 overflow-x-auto max-w-[200px] sm:max-w-md">
-                  {assetManager.assets.map(asset => (
-                    <div key={asset.id} onClick={() => setAssetManager(p => ({ ...p, activeId: asset.id }))}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs cursor-pointer border transition-all whitespace-nowrap group ${asset.id === assetManager.activeId ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'}`}>
-                      <Icon name={asset.type === 'stock' ? 'Activity' : 'PieChart'} size={12} />
-                      {asset.name}
-                      {assetManager.assets.length > 1 && <span onClick={(e) => handleDeleteAsset(e, asset.id)} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 px-1"><Icon name="X" size={12} /></span>}
-                    </div>
-                  ))}
-                  <button onClick={() => setShowAddModal(true)} className="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors" title="添加新资产"><Icon name="PlusCircle" size={16} /></button>
-                </div>
+            <div className="px-4 h-16 flex items-center justify-between">
+              {/* Logo */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200">G</div>
+                <span className="text-base font-bold text-slate-800 hidden sm:block">网格大师 Pro</span>
+                <span className="text-xs text-slate-400 hidden sm:block">v3.3.0</span>
               </div>
 
-              <div className="flex items-center gap-3">
+              {/* 右：功能按钮组 */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <button onClick={() => setShowRotation(r => !r)}
-                  className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors font-medium ${showRotation ? 'bg-violet-600 text-white border-violet-600 shadow-sm shadow-violet-200' : 'text-violet-600 hover:bg-violet-50 border-violet-200'}`}>
-                  <Icon name="Repeat" size={14} /> {showRotation ? '退出轮动' : '量能轮动'}
+                  className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors font-medium ${showRotation ? 'bg-violet-600 text-white border-violet-600' : 'text-violet-600 hover:bg-violet-50 border-violet-200'}`}>
+                  <Icon name="Repeat" size={13} /> <span className="hidden sm:inline">{showRotation ? '退出轮动' : '量能轮动'}</span><span className="sm:hidden">轮动</span>
                 </button>
-                <button onClick={openTrash} title="回收箱"
-                  className="text-xs flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300 transition-colors">
+                <button onClick={openTrash}
+                  className="text-xs flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors">
                   <Icon name="Trash2" size={13} /> <span className="hidden sm:inline">回收箱</span>
                 </button>
                 {assetManager.assets.length > 1 && !showRotation && (
-                  <button onClick={loadOverviewData} className="text-xs text-indigo-600 hover:bg-indigo-50 flex items-center gap-1 px-3 py-1.5 rounded-lg border border-indigo-200 transition-colors font-medium">
-                    <Icon name="PieChart" size={14} /> 总览
+                  <button onClick={loadOverviewData}
+                    className="text-xs text-indigo-600 hover:bg-indigo-50 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-indigo-200 transition-colors font-medium hidden sm:flex">
+                    <Icon name="PieChart" size={13} /> 总览
                   </button>
                 )}
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Icon name="Cloud" size={14} className={syncStatus === 'err' ? 'text-red-400' : syncStatus === 'syncing' ? 'text-amber-400' : 'text-emerald-500'} />
-                  <span className="hidden sm:inline">{syncStatus === 'syncing' ? '同步中' : syncStatus === 'err' ? '同步失败' : '云端已同步'}</span>
+                <div className="flex items-center gap-1 text-xs text-slate-400">
+                  <Icon name="Cloud" size={13} className={syncStatus === 'err' ? 'text-red-400' : syncStatus === 'syncing' ? 'text-amber-400' : 'text-emerald-500'} />
+                  <span className="hidden md:inline">{syncStatus === 'syncing' ? '同步中' : syncStatus === 'err' ? '失败' : '已同步'}</span>
                 </div>
-                <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors">
-                  <Icon name="LogOut" size={14} /> 退出
+                <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 px-1.5 py-1 rounded hover:bg-red-50 transition-colors">
+                  <Icon name="LogOut" size={13} />
                 </button>
               </div>
             </div>
           </header>
 
-          <main className="max-w-6xl mx-auto px-4 py-8">
-            {showRotation ? (
-              <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-violet-200">
-                    <Icon name="Repeat" size={16} />
+          {/* ── 主体：左侧资产栏（全端）+ 右侧内容 ── */}
+          <div className="flex">
+            {/* 左侧资产侧栏：手机=56px图标条，平板=160px，桌面=200px；轮动模式时隐藏 */}
+            {!showRotation && (
+              <aside className="sidebar">
+                <div className="sidebar-inner">
+                  {/* 侧栏标题（手机隐藏） */}
+                  <div className="sidebar-label flex items-center justify-between mb-3 px-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">我的资产</span>
+                    <button onClick={() => setShowAddModal(true)} className="text-slate-400 hover:text-indigo-600 transition-colors" title="添加资产">
+                      <Icon name="PlusCircle" size={15} />
+                    </button>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-800">ETF 量能轮动</h2>
-                    <p className="text-xs text-slate-400">基于价格动量 + 成交量能 + 波动率的综合评分轮动策略</p>
+                  {/* 手机端：只有添加按钮图标 */}
+                  <div className="hidden-on-wide flex justify-center mb-2" style={{display:'none'}}>
+                  </div>
+
+                  {/* 资产列表 */}
+                  <div className="flex-1 overflow-y-auto">
+                    {assetManager.assets.map(asset => {
+                      const isActive = asset.id === assetManager.activeId;
+                      return (
+                        <div key={asset.id}
+                          className={`asset-item ${isActive ? 'active' : ''}`}
+                          title={asset.name}
+                          onClick={() => setAssetManager(p => ({ ...p, activeId: asset.id }))}>
+                          {/* 色点：手机只显示这个 */}
+                          <span className={`asset-dot ${asset.type === 'stock' ? 'bg-blue-400' : 'bg-orange-400'} ${isActive ? 'ring-2 ring-indigo-300 ring-offset-1' : ''}`}></span>
+                          {/* 文字：平板和桌面 */}
+                          <div className="asset-label flex-1 min-w-0">
+                            <div className={`text-xs font-medium truncate leading-tight ${isActive ? 'text-indigo-700' : 'text-slate-700'}`}>{asset.name}</div>
+                            <div className="text-[10px] text-slate-400 font-mono truncate">{asset.code}</div>
+                          </div>
+                          {assetManager.assets.length > 1 && (
+                            <button className="asset-del text-slate-300 hover:text-red-500"
+                              onClick={e => handleDeleteAsset(e, asset.id)}>
+                              <Icon name="X" size={11} />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {/* 手机：添加按钮 */}
+                    <div className="flex justify-center mt-1">
+                      <button onClick={() => setShowAddModal(true)}
+                        className="asset-item w-full justify-center text-slate-400 hover:text-indigo-600"
+                        title="添加资产">
+                        <Icon name="PlusCircle" size={15} />
+                        <span className="asset-label text-xs text-slate-400">添加资产</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 底部操作（手机隐藏） */}
+                  <div className="sidebar-actions mt-auto pt-3 border-t border-slate-100 space-y-1">
+                    {assetManager.assets.length > 1 && (
+                      <button onClick={loadOverviewData}
+                        className="w-full flex items-center gap-2 px-2 py-2 text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors">
+                        <Icon name="PieChart" size={13} /> 多资产总览
+                      </button>
+                    )}
+                    <button onClick={openTrash}
+                      className="w-full flex items-center gap-2 px-2 py-2 text-xs text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
+                      <Icon name="Trash2" size={13} /> 回收箱
+                    </button>
+                    <div className="flex items-center gap-1.5 px-2 pt-1">
+                      <span className={`sync-dot ${syncStatus}`}></span>
+                      <span className="text-[10px] text-slate-400">{syncStatus === 'syncing' ? '同步中' : syncStatus === 'err' ? '同步失败' : '已同步'}</span>
+                    </div>
                   </div>
                 </div>
-                <RotationDashboard userCode={userCode} />
-              </div>
-            ) : (
-              <TradeDashboard key={activeAsset.id} userCode={userCode} assetId={activeAsset.id} assetConfig={activeAsset} onUpdateAssetName={updateAssetName} />
+              </aside>
             )}
-          </main>
+
+            {/* 右侧主内容 */}
+            <main className="flex-1 min-w-0 px-4 lg:px-6 py-6 lg:py-8">
+              {showRotation ? (
+                <div>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-violet-200">
+                      <Icon name="Repeat" size={16} />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-800">ETF 量能轮动</h2>
+                      <p className="text-xs text-slate-400">价格动量 · 量能强度 · MACD · RSI · 估值百分位</p>
+                    </div>
+                  </div>
+                  <RotationDashboard userCode={userCode} />
+                </div>
+              ) : (
+                <TradeDashboard key={activeAsset.id} userCode={userCode} assetId={activeAsset.id} assetConfig={activeAsset} onUpdateAssetName={updateAssetName} />
+              )}
+            </main>
+          </div>
 
           {/* 多资产总览弹窗 */}
           {showOverview && (
