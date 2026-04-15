@@ -228,9 +228,11 @@
       });
     };
 
+    // 全局 JSONP 请求计数器，保证每次请求 callback key 唯一
+    let _jsonpSeq = 0;
+
     const fetchStockRealData = (code) => {
       return new Promise((resolve, reject) => {
-        const timestamp = Date.now();
 
         // 市场前缀判断
         const getPrefix = (c) => {
@@ -239,15 +241,13 @@
           return /^(5|6|9)/.test(c) ? "1" : "0";
         };
 
-        // 原始可工作的 JSONP（cb= 写在 URL 里，cbName 作为第二参数）
+        // JSONP：cb= 写在 URL 里，script.id 用唯一 seq 避免冲突
         const jsonp = (url, cbName) => new Promise((res, rej) => {
           const script = document.createElement('script');
-          script.id = cbName;
           script.src = url;
           const cleanup = () => {
             try { delete window[cbName]; } catch(_) {}
-            const s = document.getElementById(cbName);
-            if (s) s.remove();
+            if (script.parentNode) script.parentNode.removeChild(script);
           };
           window[cbName] = (data) => { cleanup(); res(data); };
           script.onerror = () => { cleanup(); rej(new Error('net')); };
@@ -257,11 +257,11 @@
         // 拉取指定市场的K线
         const fetchByPrefix = async (prefix) => {
           const secId = `${prefix}.${code}`;
-          const ts = `${timestamp}_${prefix}`;
+          const uid = `${Date.now()}_${++_jsonpSeq}`;  // 全局唯一
 
           let stockName = '';
           try {
-            const cbN = `cb_sn_${ts}`;
+            const cbN = `cb_sn_${uid}`;
             const nr = await jsonp(
               `https://push2.eastmoney.com/api/qt/stock/get?cb=${cbN}&secid=${secId}&fields=f58`,
               cbN
@@ -269,7 +269,7 @@
             stockName = nr?.data?.f58 || '';
           } catch(_) {}
 
-          const cbK = `cb_sk_${ts}`;
+          const cbK = `cb_sk_${uid}`;
           const kRes = await jsonp(
             `https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=${cbK}&secid=${secId}&fields1=f1&fields2=f51,f53,f57,f58&klt=101&fqt=1&end=20500101&lmt=1500`,
             cbK
@@ -282,7 +282,7 @@
             return {
               date:         p[0],
               netValue:     parseFloat(p[1]) || 0,
-              volume:       parseFloat(p[2]) || 0,  // 成交量（量能指标用）
+              volume:       parseFloat(p[2]) || 0,
               amount:       parseFloat(p[3]) || 0,
               equityReturn: 0,
             };
@@ -295,7 +295,6 @@
         const p1 = getPrefix(code);
         const p2 = p1 === '1' ? '0' : '1';
 
-        // 先试主市场，失败自动切换另一市场
         fetchByPrefix(p1)
           .then(resolve)
           .catch(() =>
