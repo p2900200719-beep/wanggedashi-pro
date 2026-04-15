@@ -3757,6 +3757,27 @@
                             const sellCount = records.filter(r => r.type === 'sell').length;
                             const lastRecord = [...records].sort((a,b) => new Date(b.date) - new Date(a.date))[0];
 
+                            // 计算3档买卖点位和份额
+                            const gridPct = (config.gridSizePct || 5) / 100;
+                            const minBuy = config.minBuy || 1000;
+                            const maxBuy = config.maxBuy || 5000;
+                            const skyLine = config.skyLine || 99999;
+                            const groundLine = config.groundLine || 0;
+                            const lastPrice = lastRecord?.price;
+                            const gridLevels = [];
+                            if (lastPrice) {
+                              for (let i = 1; i <= 3; i++) {
+                                const buyPrice = parseFloat((lastPrice * Math.pow(1 - gridPct, i)).toFixed(4));
+                                const sellPrice = parseFloat((lastPrice * Math.pow(1 + gridPct, i)).toFixed(4));
+                                let buyRatio = skyLine > groundLine ? Math.max(0, Math.min(1, (skyLine - buyPrice) / (skyLine - groundLine))) : 0.5;
+                                const buyAmt = Math.round(minBuy + buyRatio * (maxBuy - minBuy));
+                                const buyShares = buyPrice > 0 ? Math.round(buyAmt / buyPrice) : 0;
+                                const sellShares = Math.round((records.filter(r=>r.type==='buy').reduce((s,r)=>s+r.shares,0) - records.filter(r=>r.type==='sell').reduce((s,r)=>s+r.shares,0)) * 0.3);
+                                const sellAmt = Math.round(sellShares * sellPrice);
+                                gridLevels.push({ i, buyPrice, sellPrice, buyAmt, buyShares, sellShares: Math.max(0, sellShares), sellAmt: Math.max(0, sellAmt) });
+                              }
+                            }
+
                             return (
                               <div key={asset.id} className="border border-slate-200 rounded-xl p-4 hover:border-indigo-200 transition-colors cursor-pointer" onClick={() => { setAssetManager(p => ({...p, activeId: asset.id})); setShowOverview(false); }}>
                                 <div className="flex justify-between items-start mb-3">
@@ -3775,12 +3796,43 @@
                                     <div className="text-xs text-slate-400">净卖出</div>
                                   </div>
                                 </div>
-                                <div className="grid grid-cols-4 gap-3 text-xs text-center">
+
+                                <div className="grid grid-cols-4 gap-3 text-xs text-center mb-3">
                                   <div className="bg-slate-50 p-2 rounded-lg"><div className="text-slate-400">交易笔数</div><div className="font-bold text-slate-700">{records.length}</div></div>
                                   <div className="bg-emerald-50 p-2 rounded-lg"><div className="text-emerald-400">买入 {buyCount}笔</div><div className="font-bold text-emerald-700">¥{(buyTotal/10000).toFixed(1)}万</div></div>
                                   <div className="bg-red-50 p-2 rounded-lg"><div className="text-red-400">卖出 {sellCount}笔</div><div className="font-bold text-red-700">¥{(sellTotal/10000).toFixed(1)}万</div></div>
                                   <div className="bg-slate-50 p-2 rounded-lg"><div className="text-slate-400">最近操作</div><div className="font-bold text-slate-700">{lastRecord ? lastRecord.date.split('T')[0] : '—'}</div></div>
                                 </div>
+
+                                {/* 最佳买卖3档点位 */}
+                                {gridLevels.length > 0 && (
+                                  <div className="border-t border-slate-100 pt-3" onClick={e => e.stopPropagation()}>
+                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                      <Icon name="Target" size={10} /> 基于上次成交价 {lastPrice?.toFixed(4)} 的网格点位参考
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2">
+                                      {gridLevels.map(lv => (
+                                        <div key={lv.i} className="space-y-1.5">
+                                          <div className="text-[10px] text-slate-400 font-medium text-center">第{lv.i}档</div>
+                                          {/* 买入档 */}
+                                          <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-2 text-center">
+                                            <div className="text-[9px] text-emerald-500 mb-0.5">买入点</div>
+                                            <div className="text-xs font-bold text-emerald-700">{lv.buyPrice}</div>
+                                            <div className="text-[9px] text-emerald-500">¥{lv.buyAmt.toLocaleString()}</div>
+                                            <div className="text-[9px] text-slate-400">{lv.buyShares}股/份</div>
+                                          </div>
+                                          {/* 卖出档 */}
+                                          <div className="bg-red-50 border border-red-100 rounded-lg p-2 text-center">
+                                            <div className="text-[9px] text-red-400 mb-0.5">卖出点</div>
+                                            <div className="text-xs font-bold text-red-600">{lv.sellPrice}</div>
+                                            <div className="text-[9px] text-red-400">¥{lv.sellAmt.toLocaleString()}</div>
+                                            <div className="text-[9px] text-slate-400">{lv.sellShares}股/份</div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
