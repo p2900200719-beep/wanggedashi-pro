@@ -1746,8 +1746,24 @@
       // MACD 加减分：金叉/多头加分，死叉/空头扣分
       const macdBonus = macdResult.trend === 'golden' ? 8 : macdResult.trend === 'bullish' ? 4 : macdResult.trend === 'death' ? -8 : -4;
 
+      // ── 估值百分位（价格在历史区间的相对位置）────────
+      // 用全量历史数据的最高最低价计算百分位，衡量当前估值高低
+      const calcValPct = (p, window = 250) => {
+        const slice = p.slice(-window);
+        const hi = Math.max(...slice);
+        const lo = Math.min(...slice);
+        if (hi === lo) return 50;
+        return parseFloat(((p[p.length-1] - lo) / (hi - lo) * 100).toFixed(1));
+      };
+      const valPct1y  = calcValPct(prices, 250);  // 1年（约250交易日）
+      const valPct3y  = prices.length >= 750 ? calcValPct(prices, 750) : null;   // 3年
+      const valPct5y  = prices.length >= 1250 ? calcValPct(prices, 1250) : null; // 5年
+      // 估值信号：低位加分（有更大上涨空间），高位扣分（风险偏高）
+      const valLevel  = valPct1y <= 20 ? 'low' : valPct1y <= 40 ? 'below_mid' : valPct1y <= 60 ? 'mid' : valPct1y <= 80 ? 'above_mid' : 'high';
+      const valBonus  = valPct1y <= 20 ? 6 : valPct1y <= 40 ? 3 : valPct1y <= 60 ? 0 : valPct1y <= 80 ? -3 : -6;
+
       // ── 综合得分 ──────────────────────────────────
-      const raw = momScore * weights.mom + volScore * weights.vol + volPenalty * weights.atr + resonance + rsiBonus + macdBonus;
+      const raw = momScore * weights.mom + volScore * weights.vol + volPenalty * weights.atr + resonance + rsiBonus + macdBonus + valBonus;
       const score = Math.max(-100, Math.min(100, raw));
 
       return {
@@ -1760,6 +1776,10 @@
         rsi,
         rsiSignal,
         macd: macdResult,
+        valPct1y,
+        valPct3y,
+        valPct5y,
+        valLevel,
         signal: score >= 15 ? 'strong' : score >= 5 ? 'weak' : score >= -5 ? 'neutral' : score >= -15 ? 'caution' : 'danger',
         lastPrice: prices[n-1],
         priceUp,
@@ -1893,6 +1913,14 @@
       const [heatmapPeriod, setHeatmapPeriod] = useState(20);
       const [searchText, setSearchText] = useState('');
 
+      // ── 智能筛选状态 ──────────────────────────────
+      const [scanResults, setScanResults] = useState([]);
+      const [isScanning, setIsScanning] = useState(false);
+      const [scanProgress, setScanProgress] = useState({ done: 0, total: 0, current: '' });
+      const [scanFilter, setScanFilter] = useState('weak'); // strong | weak | all
+      const [scanSortBy, setScanSortBy] = useState('score'); // score | valPct | rsi | mom20
+      const [scanGroup, setScanGroup] = useState('all'); // all | 宽基指数 | 行业主题 | 红利/Smart Beta
+
       const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, ComposedChart, Brush } = Recharts;
 
       // 从 Supabase 加载池子
@@ -1930,6 +1958,49 @@
       // 批量拉取所有池中ETF
       const fetchAll = async () => {
         for (const etf of pool) { await fetchETF(etf.code, etf.name); }
+      };
+
+      // ── 智能筛选：扫描预设库所有ETF ─────────────────
+      const runScan = async () => {
+        // 收集待扫描标的（预设库全量，或按板块过滤）
+        let targets = PRESET_ETF_GROUPS.flatMap(g =>
+          (scanGroup === 'all' || g.group === scanGroup) ? g.items.map(item => ({ ...item, group: g.group })) : []
+        );
+        // 去重
+        const seen = new Set();
+        targets = targets.filter(t => { if (seen.has(t.code)) return false; seen.add(t.code); return true; });
+
+        setScanResults([]);
+        setIsScanning(true);
+        setScanProgress({ done: 0, total: targets.length, current: '' });
+
+        const results = [];
+        for (let i = 0; i < targets.length; i++) {
+          const etf = targets[i];
+          setScanProgress({ done: i, total: targets.length, current: etf.name });
+          try {
+            // 优先使用已有数据，避免重复拉取
+            let d = etfData[etf.code];
+            if (!d) {
+              const res = await fetchStockRealData(etf.code);
+              d = { name: res.name || etf.name, data: res.data };
+              setEtfData(prev => ({ ...prev, [etf.code]: d }));
+            }
+            const sc = calcRotationScore(d.data, weights);
+            if (sc) {
+              results.push({ ...etf, name: d.name || etf.name, ...sc });
+            }
+          } catch(e) {
+            // 拉取失败静默跳过
+          }
+          // 小延迟避免并发过高
+          await new Promise(r => setTimeout(r, 80));
+        }
+
+        results.sort((a, b) => b.score - a.score);
+        setScanResults(results);
+        setScanProgress({ done: targets.length, total: targets.length, current: '' });
+        setIsScanning(false);
       };
 
       // 每次数据更新后重算评分
@@ -2000,10 +2071,11 @@
           {/* 轮动子导航 */}
           <nav className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg mb-6 flex-wrap">
             {[
-              { id: 'pool', label: 'ETF池管理', icon: 'Grid' },
-              { id: 'signal', label: '轮动评分', icon: 'Signal' },
-              { id: 'heatmap', label: '量价热力图', icon: 'Layers' },
-              { id: 'backtest', label: '轮动回测', icon: 'Calculator' },
+              { id: 'pool',    label: 'ETF池管理',  icon: 'Grid' },
+              { id: 'signal',  label: '轮动评分',    icon: 'Signal' },
+              { id: 'scanner', label: '智能筛选',    icon: 'Search' },
+              { id: 'heatmap', label: '量价热力图',  icon: 'Layers' },
+              { id: 'backtest',label: '轮动回测',    icon: 'Calculator' },
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveRotTab(tab.id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${activeRotTab === tab.id ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
@@ -2189,6 +2261,25 @@
                                   <span className={`text-xs font-bold ${macdColor.split(' ')[0]}`}>{macdLabel}</span>
                                 </div>
                               </div>
+                              {/* 估值百分位条 */}
+                              {etf.valPct1y != null && (() => {
+                                const vColors = { low:'text-emerald-600', below_mid:'text-teal-600', mid:'text-slate-500', above_mid:'text-orange-500', high:'text-red-500' };
+                                const vLabels = { low:'低位', below_mid:'偏低', mid:'中位', above_mid:'偏高', high:'高位' };
+                                const vLevel = etf.valLevel || 'mid';
+                                return (
+                                  <div className="mt-2 bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
+                                    <div className="flex justify-between items-center mb-1">
+                                      <span className="text-[10px] text-slate-400">估值百分位（近1年）</span>
+                                      <span className={`text-xs font-bold ${vColors[vLevel]}`}>{etf.valPct1y}% · {vLabels[vLevel]}</span>
+                                    </div>
+                                    <div className="relative h-2 bg-slate-200 rounded-full overflow-hidden">
+                                      <div className="absolute inset-y-0 left-0 rounded-full transition-all"
+                                        style={{width:`${etf.valPct1y}%`, background: etf.valPct1y<=30?'#10b981':etf.valPct1y<=60?'#94a3b8':'#f97316'}}></div>
+                                    </div>
+                                    {etf.valPct3y != null && <div className="text-[9px] text-slate-400 mt-1">近3年百分位：{etf.valPct3y}%</div>}
+                                  </div>
+                                );
+                              })()}
                             </>
                           )}
                           {etf.resonance > 0 && <div className="mt-2 text-[10px] px-2 py-1 bg-red-50 text-red-600 rounded font-bold">⚡ 量价共振！价涨量增</div>}
@@ -2217,6 +2308,7 @@
                             <th className="px-4 py-3 text-right">量比</th>
                             <th className="px-4 py-3 text-right">RSI</th>
                             <th className="px-4 py-3 text-center">MACD</th>
+                            <th className="px-4 py-3 text-right">估值1Y%</th>
                             <th className="px-4 py-3 text-center">量价</th>
                             <th className="px-4 py-3 text-right">现价</th>
                           </tr>
@@ -2266,6 +2358,22 @@
                                     <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${macdColor}`}>{macdLabel}</span>
                                   ) : <span className="text-slate-300">—</span>}
                                 </td>
+                                <td className="px-4 py-3 text-right">
+                                  {etf.valPct1y != null ? (() => {
+                                    const vLevel = etf.valLevel || 'mid';
+                                    const vColors = { low:'text-emerald-600', below_mid:'text-teal-600', mid:'text-slate-500', above_mid:'text-orange-500', high:'text-red-500' };
+                                    const vLabels = { low:'低位', below_mid:'偏低', mid:'中位', above_mid:'偏高', high:'高位' };
+                                    return (
+                                      <div className="flex flex-col items-end gap-0.5">
+                                        <span className={`text-xs font-bold ${vColors[vLevel]}`}>{etf.valPct1y}%</span>
+                                        <div className="w-12 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                          <div className="h-full rounded-full" style={{width:`${etf.valPct1y}%`, background: etf.valPct1y<=30?'#10b981':etf.valPct1y<=60?'#94a3b8':'#f97316'}}></div>
+                                        </div>
+                                        <span className={`text-[9px] ${vColors[vLevel]}`}>{vLabels[vLevel]}</span>
+                                      </div>
+                                    );
+                                  })() : <span className="text-slate-300">—</span>}
+                                </td>
                                 <td className="px-4 py-3 text-center text-sm">
                                   {etf.resonance > 0 ? <span title="价涨量增">⚡</span> : etf.resonance < 0 ? <span title="价涨量缩" className="opacity-50">⚠</span> : <span className="text-slate-200">—</span>}
                                 </td>
@@ -2299,6 +2407,256 @@
                     <p className="text-xs text-slate-400 mt-3">💡 建议每 {rebalanceDays} 交易日检查一次，当排名变化超过2位时考虑换仓。含手续费成本约 {(fee * 10000).toFixed(1)} 个基点/次。</p>
                   </Card>
                 </>
+              )}
+            </div>
+          )}
+
+          {/* ===== 智能筛选 Tab ===== */}
+          {activeRotTab === 'scanner' && (
+            <div className="space-y-6">
+              {/* 筛选控制面板 */}
+              <Card className="p-5">
+                <div className="flex flex-wrap items-end gap-4 mb-4">
+                  <div className="flex-1 min-w-[160px]">
+                    <label className="text-xs font-medium text-slate-600 block mb-1">扫描范围</label>
+                    <select value={scanGroup} onChange={e => setScanGroup(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-400">
+                      <option value="all">全部预设（{PRESET_ETF_GROUPS.flatMap(g=>g.items).length}只）</option>
+                      {PRESET_ETF_GROUPS.map(g => <option key={g.group} value={g.group}>{g.group}（{g.items.length}只）</option>)}
+                    </select>
+                  </div>
+                  <div className="flex-1 min-w-[140px]">
+                    <label className="text-xs font-medium text-slate-600 block mb-1">强度筛选</label>
+                    <select value={scanFilter} onChange={e => setScanFilter(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-400">
+                      <option value="strong">仅强势（score≥15）</option>
+                      <option value="weak">偏强以上（score≥5）</option>
+                      <option value="all">全部展示</option>
+                    </select>
+                  </div>
+                  <div className="flex-1 min-w-[140px]">
+                    <label className="text-xs font-medium text-slate-600 block mb-1">排序方式</label>
+                    <select value={scanSortBy} onChange={e => setScanSortBy(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-400">
+                      <option value="score">综合评分</option>
+                      <option value="mom20">20日涨幅</option>
+                      <option value="valPct1y">估值低位优先</option>
+                      <option value="rsi">RSI偏低优先</option>
+                    </select>
+                  </div>
+                  <Button onClick={runScan} disabled={isScanning} className="bg-violet-600 hover:bg-violet-700 text-white min-w-[120px]">
+                    {isScanning
+                      ? <><Icon name="RefreshCw" size={14} className="animate-spin" /> 扫描中...</>
+                      : <><Icon name="Search" size={14} /> 开始扫描</>}
+                  </Button>
+                </div>
+
+                {/* 进度条 */}
+                {isScanning && (
+                  <div className="mb-2">
+                    <div className="flex justify-between text-xs text-slate-500 mb-1">
+                      <span>正在分析：{scanProgress.current}</span>
+                      <span>{scanProgress.done}/{scanProgress.total}</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-violet-500 rounded-full transition-all duration-300"
+                        style={{width: `${scanProgress.total > 0 ? scanProgress.done/scanProgress.total*100 : 0}%`}}></div>
+                    </div>
+                  </div>
+                )}
+                <p className="text-xs text-slate-400">
+                  💡 扫描时将逐只拉取东方财富行情数据，耗时约 {PRESET_ETF_GROUPS.flatMap(g=>g.items).length * 0.1} 秒。已在池中拉过数据的标的直接复用，无需重复请求。
+                </p>
+              </Card>
+
+              {/* 筛选结果 */}
+              {scanResults.length > 0 && (() => {
+                // 过滤 + 排序
+                let filtered = scanResults.filter(e => {
+                  if (scanFilter === 'strong') return e.score >= 15;
+                  if (scanFilter === 'weak')   return e.score >= 5;
+                  return true;
+                });
+                filtered = [...filtered].sort((a, b) => {
+                  if (scanSortBy === 'mom20')    return b.mom20 - a.mom20;
+                  if (scanSortBy === 'valPct1y') return a.valPct1y - b.valPct1y; // 低位优先
+                  if (scanSortBy === 'rsi')      return a.rsi - b.rsi; // RSI低位优先
+                  return b.score - a.score;
+                });
+
+                const valConfig = {
+                  low:       { label: '低位',  color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                  below_mid: { label: '偏低',  color: 'text-teal-600',    bg: 'bg-teal-50' },
+                  mid:       { label: '中位',  color: 'text-slate-500',   bg: 'bg-slate-50' },
+                  above_mid: { label: '偏高',  color: 'text-orange-500',  bg: 'bg-orange-50' },
+                  high:      { label: '高位',  color: 'text-red-500',     bg: 'bg-red-50' },
+                };
+
+                return (
+                  <>
+                    {/* 汇总 Banner */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                        { label: '扫描标的',   value: scanResults.length + ' 只',  color: 'text-slate-700', bg: 'bg-slate-50' },
+                        { label: '强势/偏强',  value: scanResults.filter(e=>e.score>=5).length + ' 只', color: 'text-red-500', bg: 'bg-red-50' },
+                        { label: '低估值',     value: scanResults.filter(e=>e.valPct1y<=30).length + ' 只', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                        { label: '量价共振',   value: scanResults.filter(e=>e.resonance>0).length + ' 只', color: 'text-violet-600', bg: 'bg-violet-50' },
+                      ].map((item,i) => (
+                        <div key={i} className={`p-3 rounded-xl border-0 text-center ${item.bg}`}>
+                          <div className="text-xs text-slate-400 mb-0.5">{item.label}</div>
+                          <div className={`text-xl font-bold ${item.color}`}>{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 强势标的卡片快览（Top 偏强以上，最多显示6个） */}
+                    {filtered.slice(0, 6).length > 0 && (
+                      <div>
+                        <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
+                          <Icon name="Star" size={15} className="text-amber-400" /> 
+                          强势候选（{filtered.length}只，展示前{Math.min(filtered.length,6)}只）
+                        </h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {filtered.slice(0, 6).map(etf => {
+                            const sc = signalConfig[etf.signal];
+                            const vc = valConfig[etf.valLevel] || valConfig.mid;
+                            const inPool = pool.find(p => p.code === etf.code);
+                            return (
+                              <div key={etf.code} className={`relative rounded-xl border p-4 ${sc.border} ${sc.bg} transition-all`}>
+                                {/* 加入池子按钮 */}
+                                <button
+                                  onClick={() => inPool ? removeFromPool(etf.code) : addToPool(etf.code, etf.name)}
+                                  className={`absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors ${inPool ? 'bg-violet-100 text-violet-600 hover:bg-red-100 hover:text-red-500' : 'bg-white border border-slate-200 text-slate-500 hover:bg-violet-50 hover:text-violet-600 hover:border-violet-300'}`}>
+                                  {inPool ? '✓ 已加入' : '+ 加入池'}
+                                </button>
+                                <div className="pr-14">
+                                  <div className="text-[10px] text-slate-400 font-mono mb-0.5">{etf.group} · {etf.code}</div>
+                                  <div className="font-bold text-slate-800 text-sm leading-tight mb-2">{etf.name}</div>
+                                </div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className={`text-lg font-bold ${sc.color}`}>{etf.score > 0 ? '+' : ''}{etf.score}</span>
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${sc.color} ${sc.bg}`}>{sc.label}</span>
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${vc.color} ${vc.bg}`}>{vc.label}</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-1 text-[10px]">
+                                  <div className="text-center bg-white/60 rounded p-1">
+                                    <div className="text-slate-400">20日</div>
+                                    <div className={`font-bold ${etf.mom20>=0?'text-red-500':'text-green-600'}`}>{etf.mom20>0?'+':''}{etf.mom20}%</div>
+                                  </div>
+                                  <div className="text-center bg-white/60 rounded p-1">
+                                    <div className="text-slate-400">RSI</div>
+                                    <div className={`font-bold ${etf.rsi>=70?'text-red-500':etf.rsi<=30?'text-green-600':'text-slate-600'}`}>{etf.rsi}</div>
+                                  </div>
+                                  <div className="text-center bg-white/60 rounded p-1">
+                                    <div className="text-slate-400">估值%</div>
+                                    <div className={`font-bold ${vc.color}`}>{etf.valPct1y}%</div>
+                                  </div>
+                                </div>
+                                {etf.resonance > 0 && <div className="mt-2 text-[9px] text-red-600 font-bold">⚡ 量价共振</div>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 完整扫描结果表 */}
+                    <Card className="overflow-hidden">
+                      <div className="p-4 border-b bg-slate-50 flex justify-between items-center flex-wrap gap-2">
+                        <span className="font-bold text-slate-700">完整扫描结果（{filtered.length}只符合条件）</span>
+                        <span className="text-xs text-slate-400">估值百分位 = 当前价在近1年高低区间的位置，越低越便宜</span>
+                      </div>
+                      <div className="overflow-x-auto max-h-[500px]">
+                        <table className="w-full text-sm">
+                          <thead className="bg-slate-50 text-slate-500 text-xs sticky top-0 z-10">
+                            <tr>
+                              <th className="px-4 py-3 text-left">标的</th>
+                              <th className="px-4 py-3 text-left">板块</th>
+                              <th className="px-4 py-3 text-center">信号</th>
+                              <th className="px-4 py-3 text-right">综合分</th>
+                              <th className="px-4 py-3 text-right">20日</th>
+                              <th className="px-4 py-3 text-right">60日</th>
+                              <th className="px-4 py-3 text-right">RSI</th>
+                              <th className="px-4 py-3 text-center">MACD</th>
+                              <th className="px-4 py-3 text-right">估值1Y%</th>
+                              <th className="px-4 py-3 text-right">估值3Y%</th>
+                              <th className="px-4 py-3 text-right">量比</th>
+                              <th className="px-4 py-3 text-center">操作</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {filtered.map((etf, idx) => {
+                              const sc = signalConfig[etf.signal] || signalConfig.neutral;
+                              const vc = valConfig[etf.valLevel] || valConfig.mid;
+                              const inPool = pool.find(p => p.code === etf.code);
+                              const macdColor = etf.macd?.trend === 'golden' ? 'text-red-500 bg-red-50' : etf.macd?.trend === 'bullish' ? 'text-orange-400 bg-orange-50' : etf.macd?.trend === 'death' ? 'text-emerald-600 bg-emerald-50' : 'text-blue-400 bg-blue-50';
+                              const macdLabel = etf.macd?.trend === 'golden' ? '金叉↑' : etf.macd?.trend === 'bullish' ? '多头' : etf.macd?.trend === 'death' ? '死叉↓' : '空头';
+                              return (
+                                <tr key={etf.code} className={`hover:bg-slate-50 ${idx < 3 ? 'bg-violet-50/20' : ''}`}>
+                                  <td className="px-4 py-2.5">
+                                    <div className="font-medium text-slate-800 text-xs">{etf.name}</div>
+                                    <div className="text-[10px] font-mono text-slate-400">{etf.code}</div>
+                                  </td>
+                                  <td className="px-4 py-2.5 text-[10px] text-slate-400">{etf.group}</td>
+                                  <td className="px-4 py-2.5 text-center">
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${sc.color} ${sc.bg}`}>{sc.label}</span>
+                                  </td>
+                                  <td className={`px-4 py-2.5 text-right font-bold ${sc.color}`}>
+                                    {etf.score > 0 ? '+' : ''}{etf.score}
+                                  </td>
+                                  <td className={`px-4 py-2.5 text-right text-xs font-mono ${etf.mom20>=0?'text-red-500':'text-green-600'}`}>
+                                    {etf.mom20>0?'+':''}{etf.mom20}%
+                                  </td>
+                                  <td className={`px-4 py-2.5 text-right text-xs font-mono ${etf.mom60>=0?'text-red-500':'text-green-600'}`}>
+                                    {etf.mom60>0?'+':''}{etf.mom60}%
+                                  </td>
+                                  <td className="px-4 py-2.5 text-right text-xs">
+                                    <span className={etf.rsi>=70?'text-red-500 font-bold':etf.rsi<=30?'text-green-600 font-bold':'text-slate-600'}>{etf.rsi}</span>
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center">
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${macdColor}`}>{macdLabel}</span>
+                                  </td>
+                                  {/* 估值百分位：带进度条 */}
+                                  <td className="px-4 py-2.5 text-right">
+                                    <div className="flex flex-col items-end gap-0.5">
+                                      <span className={`text-xs font-bold ${vc.color}`}>{etf.valPct1y}%</span>
+                                      <div className="w-14 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                        <div className="h-full rounded-full transition-all"
+                                          style={{width:`${etf.valPct1y}%`, background: etf.valPct1y<=30?'#10b981':etf.valPct1y<=60?'#94a3b8':'#f97316'}}></div>
+                                      </div>
+                                      <span className={`text-[9px] ${vc.color}`}>{vc.label}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-2.5 text-right text-xs text-slate-500">
+                                    {etf.valPct3y != null ? etf.valPct3y + '%' : <span className="text-slate-300">—</span>}
+                                  </td>
+                                  <td className={`px-4 py-2.5 text-right text-xs font-mono ${etf.volRatio>1.2?'text-red-500':etf.volRatio<0.8?'text-green-600':'text-slate-500'}`}>
+                                    {etf.volRatio}x
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center">
+                                    <button
+                                      onClick={() => inPool ? removeFromPool(etf.code) : addToPool(etf.code, etf.name)}
+                                      className={`text-[10px] px-2 py-1 rounded-lg font-medium transition-colors ${inPool ? 'bg-violet-100 text-violet-600 hover:bg-red-50 hover:text-red-500' : 'bg-slate-100 text-slate-500 hover:bg-violet-50 hover:text-violet-600'}`}>
+                                      {inPool ? '已在池中' : '+ 加入池'}
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Card>
+                  </>
+                );
+              })()}
+
+              {!isScanning && scanResults.length === 0 && (
+                <Card className="p-16 text-center text-slate-400">
+                  <Icon name="Search" size={48} className="mx-auto mb-4 opacity-20" />
+                  <p className="mb-1 text-slate-500 font-medium">自动扫描场内 ETF 强势标的</p>
+                  <p className="text-xs text-slate-400 mb-4">一键扫描预设库所有 {PRESET_ETF_GROUPS.flatMap(g=>g.items).length} 只 ETF，自动评分筛选偏强以上标的，含估值百分位分析</p>
+                  <Button onClick={runScan} className="bg-violet-600 hover:bg-violet-700 text-white mx-auto">
+                    <Icon name="Search" size={16} /> 立即开始扫描
+                  </Button>
+                </Card>
               )}
             </div>
           )}
