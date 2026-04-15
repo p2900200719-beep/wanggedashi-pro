@@ -230,72 +230,72 @@
 
     const fetchStockRealData = (code) => {
       return new Promise((resolve, reject) => {
-        const timestamp = Date.now();
 
-        // ── 市场判断（东方财富 secId 规则）──────────────
-        // 沪市(1)：51xxxx 56xxxx 58xxxx 60xxxx 68xxxx 11xxxx 等
-        // 深市(0)：00xxxx 15xxxx 16xxxx 30xxxx 12xxxx 等
-        const getSecIdPrefix = (c) => {
-          if (/^(51|56|58|60|68|11|78)/.test(c)) return "1"; // 沪市ETF/股票/债券
-          if (/^(00|15|16|17|30|12|13)/.test(c)) return "0"; // 深市ETF/股票/债券
-          if (/^(51|52|53|54|55|56|57|58|59)/.test(c)) return "1"; // 沪市ETF 5开头补充
-          return /^(5|6|9)/.test(c) ? "1" : "0";            // 兜底
+        // ── 市场前缀判断 ──────────────────────────────
+        const getPrefix = (c) => {
+          if (/^(51|52|53|56|58|60|68|11|78)/.test(c)) return "1"; // 沪市
+          if (/^(00|15|16|17|30|12|13)/.test(c)) return "0";        // 深市
+          return /^(5|6|9)/.test(c) ? "1" : "0";
         };
 
-        // ── 尝试拉取，支持沪深两市自动切换重试 ────────
-        const tryFetch = (prefix) => new Promise((res, rej) => {
-          const secId = `${prefix}.${code}`;
-          const jsonp = (url, cbName) => new Promise((r, e) => {
-            const script = document.createElement("script");
-            script.id = cbName; script.src = url;
-            const cleanup = () => { try { delete window[cbName]; } catch(_) {} const s = document.getElementById(cbName); if (s) s.remove(); };
-            window[cbName] = (data) => { cleanup(); r(data); };
-            script.onerror = () => { cleanup(); e(new Error("网络失败")); };
-            document.body.appendChild(script);
-          });
-          (async () => {
-            try {
-              // 先拿名称（失败不影响主流程）
-              let stockName = "";
-              try {
-                const cbN = `cb_sn_${timestamp}_${prefix}`;
-                const nr = await jsonp(`https://push2.eastmoney.com/api/qt/stock/get?cb=${cbN}&secid=${secId}&fields=f58`, cbN);
-                stockName = nr?.data?.f58 || "";
-              } catch(_) {}
-
-              // 拉K线
-              const cbK = `cb_sk_${timestamp}_${prefix}`;
-              const kRes = await jsonp(
-                `https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=${cbK}&secid=${secId}&fields1=f1&fields2=f51,f53&klt=101&fqt=1&end=20500101&lmt=1500`,
-                cbK
-              );
-
-              if (kRes?.data?.klines?.length > 0) {
-                const name = stockName || kRes.data.name || `标的${code}`;
-                const data = kRes.data.klines.map(line => {
-                  const p = line.split(",");
-                  const price = parseFloat(p[1]);
-                  return { date: p[0], netValue: isNaN(price) ? 0 : price, equityReturn: 0 };
-                }).filter(d => d.netValue > 0);
-                if (data.length > 0) { res({ name, data }); return; }
-              }
-              rej(new Error("空数据"));
-            } catch(err) { rej(err); }
-          })();
+        // ── JSONP 工具 ────────────────────────────────
+        let _cbSeq = 0;
+        const jsonp = (url, cb) => new Promise((res, rej) => {
+          const key = `_etfcb_${Date.now()}_${++_cbSeq}`;
+          const fullUrl = url + (url.includes('?') ? '&' : '?') + `cb=${key}`;
+          const script = document.createElement('script');
+          const cleanup = () => {
+            try { delete window[key]; } catch(_) {}
+            if (script.parentNode) script.parentNode.removeChild(script);
+          };
+          window[key] = (data) => { cleanup(); res(data); };
+          script.onerror = () => { cleanup(); rej(new Error('net')); };
+          script.src = fullUrl;
+          document.body.appendChild(script);
         });
 
-        // 先用规则判断的市场试，失败则自动切换另一个市场重试
-        const primaryPrefix = getSecIdPrefix(code);
-        const fallbackPrefix = primaryPrefix === "1" ? "0" : "1";
+        // ── 拉取 K 线（含量能字段） ───────────────────
+        const fetchKline = async (prefix) => {
+          const secId = `${prefix}.${code}`;
 
-        tryFetch(primaryPrefix)
+          // 名称（失败跳过）
+          let name = '';
+          try {
+            const nr = await jsonp(
+              `https://push2.eastmoney.com/api/qt/stock/get?secid=${secId}&fields=f58`
+            );
+            name = nr?.data?.f58 || '';
+          } catch(_) {}
+
+          // K线：f51日期 f53收盘 f57成交量 f58成交额
+          const kRes = await jsonp(
+            `https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=${secId}&fields1=f1&fields2=f51,f53,f57,f58&klt=101&fqt=1&end=20500101&lmt=1500`
+          );
+
+          if (!kRes?.data?.klines?.length) throw new Error('empty');
+
+          const data = kRes.data.klines.map(line => {
+            const p = line.split(',');
+            return {
+              date:      p[0],
+              netValue:  parseFloat(p[1]) || 0,
+              volume:    parseFloat(p[2]) || 0,   // 成交量，轮动量能指标用
+              amount:    parseFloat(p[3]) || 0,
+              equityReturn: 0,
+            };
+          }).filter(d => d.netValue > 0);
+
+          if (!data.length) throw new Error('nodata');
+          return { name: name || kRes.data.name || `标的${code}`, data };
+        };
+
+        // ── 先试主市场，失败自动切换另一市场重试 ────
+        const p1 = getPrefix(code);
+        const p2 = p1 === '1' ? '0' : '1';
+
+        fetchKline(p1)
           .then(resolve)
-          .catch(() => {
-            // 自动切换市场重试一次
-            tryFetch(fallbackPrefix)
-              .then(resolve)
-              .catch(() => reject("未获取到数据，请确认代码正确"));
-          });
+          .catch(() => fetchKline(p2).then(resolve).catch(() => reject('数据获取失败，请检查代码')));
       });
     };
 
