@@ -2328,11 +2328,12 @@
           {/* 轮动子导航 */}
           <nav className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg mb-6 flex-wrap">
             {[
-              { id: 'pool',    label: 'ETF池管理',  icon: 'Grid' },
-              { id: 'signal',  label: '轮动评分',    icon: 'Signal' },
-              { id: 'scanner', label: '智能筛选',    icon: 'Search' },
-              { id: 'heatmap', label: '量价热力图',  icon: 'Layers' },
-              { id: 'backtest',label: '轮动回测',    icon: 'Calculator' },
+              { id: 'pool',      label: 'ETF池管理',  icon: 'Grid' },
+              { id: 'signal',    label: '轮动评分',    icon: 'Signal' },
+              { id: 'scanner',   label: '智能筛选',    icon: 'Search' },
+              { id: 'gridpick',  label: '网格选标',    icon: 'Target' },
+              { id: 'heatmap',   label: '量价热力图',  icon: 'Layers' },
+              { id: 'backtest',  label: '轮动回测',    icon: 'Calculator' },
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveRotTab(tab.id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${activeRotTab === tab.id ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
@@ -2918,6 +2919,361 @@
               )}
             </div>
           )}
+
+          {/* ===== 网格选标 Tab ===== */}
+          {activeRotTab === 'gridpick' && (() => {
+            // ── 网格适合度评分引擎 ────────────────────────────────
+            const calcGridScore = (data) => {
+              if (!data || data.length < 60) return null;
+              const prices = data.map(d => d.netValue);
+              const n = prices.length;
+
+              // 1. 震荡系数：用近60日价格的标准差/均值（波动率），适中最好
+              const slice60 = prices.slice(-60);
+              const mean60 = slice60.reduce((a,b) => a+b,0) / 60;
+              const std60 = Math.sqrt(slice60.reduce((s,p) => s + Math.pow(p - mean60, 2), 0) / 60);
+              const cvPct = mean60 > 0 ? (std60 / mean60 * 100) : 0; // 变异系数 %
+              // 最佳网格区间：CV 在 3%~12%（太低无利润，太高风险大）
+              const oscScore = cvPct < 1 ? 0 : cvPct < 3 ? 40 : cvPct < 8 ? 100 : cvPct < 12 ? 80 : cvPct < 18 ? 50 : 20;
+
+              // 2. 均值回归性：近60日价格穿越MA20的次数（穿越越多越适合网格）
+              const ma20 = [];
+              for (let i = 19; i < slice60.length; i++) {
+                ma20.push(slice60.slice(i-19, i+1).reduce((a,b)=>a+b,0)/20);
+              }
+              let crossCount = 0;
+              for (let i = 1; i < ma20.length; i++) {
+                const above = slice60[i+19] > ma20[i];
+                const prevAbove = slice60[i+18] > ma20[i-1];
+                if (above !== prevAbove) crossCount++;
+              }
+              const meanRevScore = Math.min(100, crossCount * 12); // 每次穿越12分，上限100
+
+              // 3. 趋势强度（越弱越适合网格，强趋势适合持有不适合网格）
+              const first20 = prices.slice(-60, -40);
+              const last20 = prices.slice(-20);
+              const trendPct = mean60 > 0 ? Math.abs((last20.reduce((a,b)=>a+b,0)/20 - first20.reduce((a,b)=>a+b,0)/20) / mean60 * 100) : 0;
+              // 趋势越弱越好：<5% 满分，>20% 低分
+              const trendScore = trendPct < 3 ? 100 : trendPct < 8 ? 85 : trendPct < 15 ? 60 : trendPct < 25 ? 30 : 10;
+
+              // 4. 估值百分位（来自轮动模块已有计算）：低估值更适合建仓
+              const hi = Math.max(...prices.slice(-250));
+              const lo = Math.min(...prices.slice(-250));
+              const valPct = hi > lo ? ((prices[n-1] - lo) / (hi - lo) * 100) : 50;
+              // 低位建仓更安全：<30% 满分，>70% 低分
+              const valScore = valPct < 20 ? 100 : valPct < 35 ? 90 : valPct < 50 ? 70 : valPct < 65 ? 45 : valPct < 80 ? 25 : 10;
+
+              // 5. 最大区间跌幅（近60日）：跌幅适中说明有波动但不崩盘
+              const maxP = Math.max(...slice60);
+              const minP = Math.min(...slice60);
+              const rangeDropPct = maxP > 0 ? ((maxP - minP) / maxP * 100) : 0;
+              // 区间跌幅 5%~25% 最理想
+              const rangeScore = rangeDropPct < 3 ? 20 : rangeDropPct < 8 ? 70 : rangeDropPct < 20 ? 100 : rangeDropPct < 30 ? 70 : 30;
+
+              // 综合网格适合度（加权）
+              const gridScore = Math.round(
+                oscScore    * 0.25 +
+                meanRevScore* 0.25 +
+                trendScore  * 0.20 +
+                valScore    * 0.20 +
+                rangeScore  * 0.10
+              );
+
+              // 建议网格参数
+              const suggestGridPct = cvPct < 3 ? 2 : cvPct < 6 ? 3 : cvPct < 10 ? 5 : cvPct < 15 ? 7 : 10;
+              const suggestSky = parseFloat((hi * 1.05).toFixed(4));
+              const suggestGround = parseFloat((lo * 0.95).toFixed(4));
+
+              // 综合评级
+              const grade = gridScore >= 80 ? '极适合' : gridScore >= 65 ? '适合' : gridScore >= 50 ? '可以' : gridScore >= 35 ? '一般' : '不适合';
+              const gradeColor = gridScore >= 80 ? 'text-emerald-600' : gridScore >= 65 ? 'text-teal-600' : gridScore >= 50 ? 'text-amber-500' : gridScore >= 35 ? 'text-orange-500' : 'text-red-500';
+              const gradeBg = gridScore >= 80 ? 'bg-emerald-50 border-emerald-200' : gridScore >= 65 ? 'bg-teal-50 border-teal-200' : gridScore >= 50 ? 'bg-amber-50 border-amber-200' : gridScore >= 35 ? 'bg-orange-50 border-orange-200' : 'bg-red-50 border-red-200';
+
+              return {
+                gridScore, grade, gradeColor, gradeBg,
+                oscScore: Math.round(oscScore), meanRevScore: Math.round(meanRevScore),
+                trendScore: Math.round(trendScore), valScore: Math.round(valScore), rangeScore: Math.round(rangeScore),
+                cvPct: parseFloat(cvPct.toFixed(1)),
+                crossCount, trendPct: parseFloat(trendPct.toFixed(1)),
+                valPct: parseFloat(valPct.toFixed(1)),
+                rangeDropPct: parseFloat(rangeDropPct.toFixed(1)),
+                suggestGridPct, suggestSky, suggestGround,
+                currentPrice: prices[n-1],
+              };
+            };
+
+            // 对所有有数据的ETF计算网格评分
+            const gridCandidates = useMemo(() => {
+              const results = [];
+              // 先从池中取，再从已扫描的etfData取
+              const allCodes = new Set([
+                ...pool.map(e => e.code),
+                ...Object.keys(etfData),
+              ]);
+              allCodes.forEach(code => {
+                const d = etfData[code];
+                if (!d || d.data.length < 60) return;
+                const rotScore = calcRotationScore(d.data, weights);
+                const gridScore = calcGridScore(d.data);
+                if (!gridScore) return;
+                // 综合得分：网格适合度60% + 轮动动量方向40%（动量太强扣分，太弱也扣分）
+                // 理想是"温和偏多"而不是"极端强势"
+                const rotBonus = rotScore ? (
+                  rotScore.score >= 5 && rotScore.score <= 25 ? 20 :   // 温和偏多：最佳
+                  rotScore.score > 25 ? 5 :                              // 太强：可能追高
+                  rotScore.score >= -10 ? 10 :                           // 中性：还行
+                  -10                                                     // 弱势：不建议
+                ) : 0;
+                const finalScore = Math.min(100, Math.max(0, gridScore.gridScore + rotBonus));
+                const etfInfo = pool.find(p => p.code === code) || { code, name: d.name };
+                results.push({
+                  ...etfInfo,
+                  name: d.name || etfInfo.name,
+                  ...gridScore,
+                  finalScore,
+                  rotScore: rotScore ? rotScore.score : null,
+                  rsi: rotScore ? rotScore.rsi : null,
+                  rsiSignal: rotScore ? rotScore.rsiSignal : null,
+                  macdTrend: rotScore ? rotScore.macd?.trend : null,
+                  mom20: rotScore ? rotScore.mom20 : null,
+                });
+              });
+              results.sort((a, b) => b.finalScore - a.finalScore);
+              return results;
+            }, [etfData, pool, weights]);
+
+            const hasData = gridCandidates.length > 0;
+            const top = gridCandidates[0];
+
+            return (
+              <div className="space-y-6">
+                {/* 说明卡片 */}
+                <Card className="p-5 border-l-4 border-l-violet-400 bg-gradient-to-r from-violet-50/50 to-white">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                      <Icon name="Target" size={20} className="text-violet-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-800 mb-1">网格选标评分逻辑</h3>
+                      <p className="text-xs text-slate-500 leading-relaxed">
+                        综合 <span className="font-medium text-violet-600">5个维度</span>自动评分，筛选出最适合网格交易的ETF：
+                        震荡系数（波动适中）· 均值回归性（穿越均线频率）· 趋势强度（弱趋势才适合网格）· 估值百分位（低估值安全边际更高）· 区间跌幅（衡量可操作空间）
+                      </p>
+                      <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
+                        <Icon name="AlertTriangle" size={12} /> 需要先在「ETF池管理」添加标的并「全部更新数据」，数据越多（建议至少60日）评分越准确
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                {!hasData ? (
+                  <Card className="p-16 text-center text-slate-400">
+                    <Icon name="Target" size={48} className="mx-auto mb-4 opacity-20" />
+                    <p className="text-slate-500 font-medium mb-1">暂无可分析数据</p>
+                    <p className="text-xs mb-4">请先在「ETF池管理」添加ETF并点击「全部更新数据」</p>
+                    <Button variant="secondary" onClick={() => setActiveRotTab('pool')}>前往添加ETF</Button>
+                  </Card>
+                ) : (
+                  <>
+                    {/* Top 推荐卡片 */}
+                    {top && top.finalScore >= 50 && (
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        {gridCandidates.slice(0, 3).map((etf, idx) => (
+                          <Card key={etf.code} className={`p-5 border-2 ${idx === 0 ? 'border-violet-300' : 'border-slate-100'} relative overflow-hidden`}>
+                            {idx === 0 && <div className="absolute top-3 right-3 text-[10px] bg-violet-600 text-white px-2 py-0.5 rounded-full font-bold">🏆 首选</div>}
+                            <div className="mb-3">
+                              <div className="text-[10px] text-slate-400 mb-0.5">#{idx+1} 网格推荐</div>
+                              <div className="font-bold text-slate-800 text-sm leading-tight">{etf.name}</div>
+                              <div className="text-[10px] font-mono text-slate-400">{etf.code}</div>
+                            </div>
+
+                            {/* 综合评分大圆 */}
+                            <div className="flex items-center gap-4 mb-4">
+                              <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-2 ${etf.gradeBg}`}>
+                                <div className={`text-2xl font-bold ${etf.gradeColor}`}>{etf.finalScore}</div>
+                                <div className={`text-[9px] font-bold ${etf.gradeColor}`}>{etf.grade}</div>
+                              </div>
+                              <div className="flex-1 space-y-1.5">
+                                {[
+                                  { label: '震荡性', val: etf.oscScore },
+                                  { label: '均值回归', val: etf.meanRevScore },
+                                  { label: '低趋势', val: etf.trendScore },
+                                  { label: '估值安全', val: etf.valScore },
+                                ].map(item => (
+                                  <div key={item.label} className="flex items-center gap-2">
+                                    <span className="text-[10px] text-slate-400 w-14 flex-shrink-0">{item.label}</span>
+                                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                      <div className="h-full rounded-full transition-all"
+                                        style={{width:`${item.val}%`, background: item.val>=80?'#10b981':item.val>=60?'#6366f1':item.val>=40?'#f59e0b':'#ef4444'}}></div>
+                                    </div>
+                                    <span className="text-[10px] font-mono text-slate-500 w-6 text-right">{item.val}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* 建议参数 */}
+                            <div className="bg-slate-50 rounded-xl p-3 space-y-1.5 text-xs border border-slate-100">
+                              <div className="font-bold text-slate-700 text-[11px] mb-2 flex items-center gap-1">
+                                <Icon name="Settings" size={11} className="text-violet-500" /> 建议网格参数
+                              </div>
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                <div><span className="text-slate-400">网格大小</span> <span className="font-bold text-violet-600">{etf.suggestGridPct}%</span></div>
+                                <div><span className="text-slate-400">当前价</span> <span className="font-bold text-slate-700">{etf.currentPrice?.toFixed(4)}</span></div>
+                                <div><span className="text-slate-400">建议天线</span> <span className="font-bold text-red-500">{etf.suggestSky}</span></div>
+                                <div><span className="text-slate-400">建议地线</span> <span className="font-bold text-emerald-600">{etf.suggestGround}</span></div>
+                                <div><span className="text-slate-400">估值位置</span> <span className={`font-bold ${etf.valPct<=35?'text-emerald-600':etf.valPct<=60?'text-amber-500':'text-red-500'}`}>{etf.valPct}%分位</span></div>
+                                <div><span className="text-slate-400">轮动评分</span> <span className={`font-bold ${etf.rotScore>0?'text-red-500':'text-green-600'}`}>{etf.rotScore!=null?(etf.rotScore>0?'+':'')+etf.rotScore:'—'}</span></div>
+                              </div>
+                            </div>
+
+                            {/* 风险提示 */}
+                            <div className="mt-3 space-y-1">
+                              {etf.rsi > 65 && <div className="text-[10px] bg-amber-50 text-amber-600 rounded px-2 py-1 border border-amber-100">⚠ RSI偏高({etf.rsi})，等待回调再建仓</div>}
+                              {etf.valPct > 65 && <div className="text-[10px] bg-red-50 text-red-500 rounded px-2 py-1 border border-red-100">⚠ 估值偏高，建议分批低仓位介入</div>}
+                              {etf.trendPct > 12 && <div className="text-[10px] bg-orange-50 text-orange-500 rounded px-2 py-1 border border-orange-100">⚠ 趋势较强({etf.trendPct}%)，网格收益可能有限</div>}
+                              {etf.gridScore >= 65 && etf.valPct < 40 && etf.rsi < 60 && <div className="text-[10px] bg-emerald-50 text-emerald-600 rounded px-2 py-1 border border-emerald-100">✅ 综合条件优秀，可考虑建立网格</div>}
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 完整评分排行表 */}
+                    <Card className="overflow-hidden">
+                      <div className="p-4 border-b bg-slate-50 flex justify-between items-center flex-wrap gap-2">
+                        <div>
+                          <span className="font-bold text-slate-700">全部 ETF 网格适合度排名</span>
+                          <span className="text-xs text-slate-400 ml-2">共 {gridCandidates.length} 只</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-slate-400">
+                          {[{c:'bg-emerald-400',l:'极适合≥80'},{c:'bg-teal-400',l:'适合≥65'},{c:'bg-amber-400',l:'可以≥50'},{c:'bg-orange-400',l:'一般≥35'},{c:'bg-red-400',l:'不适合'}].map(x=>(
+                            <span key={x.l} className="flex items-center gap-1"><span className={`w-2 h-2 rounded-full ${x.c} inline-block`}></span>{x.l}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-slate-50 text-slate-500 text-xs sticky top-0 z-10">
+                            <tr>
+                              <th className="px-4 py-3 text-left">排名</th>
+                              <th className="px-4 py-3 text-left">ETF</th>
+                              <th className="px-4 py-3 text-center">评级</th>
+                              <th className="px-4 py-3 text-right">综合分</th>
+                              <th className="px-4 py-3 text-right">震荡性</th>
+                              <th className="px-4 py-3 text-right">均值回归</th>
+                              <th className="px-4 py-3 text-right">低趋势</th>
+                              <th className="px-4 py-3 text-right">估值分位</th>
+                              <th className="px-4 py-3 text-right">建议网格</th>
+                              <th className="px-4 py-3 text-right">区间跌幅</th>
+                              <th className="px-4 py-3 text-right">轮动分</th>
+                              <th className="px-4 py-3 text-right">RSI</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {gridCandidates.map((etf, idx) => (
+                              <tr key={etf.code} className={`hover:bg-slate-50 transition-colors ${idx < 3 && etf.finalScore >= 50 ? 'bg-violet-50/30' : ''}`}>
+                                <td className="px-4 py-3 text-slate-400 font-mono text-xs">
+                                  #{idx+1}
+                                  {idx < 3 && etf.finalScore >= 65 && <span className="ml-1 text-[9px] bg-violet-100 text-violet-600 px-1 rounded">推荐</span>}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="font-medium text-slate-800 text-xs">{etf.name}</div>
+                                  <div className="text-[10px] font-mono text-slate-400">{etf.code}</div>
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${etf.gradeBg} ${etf.gradeColor}`}>{etf.grade}</span>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <div className={`text-base font-bold ${etf.gradeColor}`}>{etf.finalScore}</div>
+                                  <div className="w-12 h-1 ml-auto bg-slate-100 rounded-full overflow-hidden mt-0.5">
+                                    <div className="h-full rounded-full" style={{width:`${etf.finalScore}%`, background: etf.finalScore>=80?'#10b981':etf.finalScore>=65?'#6366f1':etf.finalScore>=50?'#f59e0b':'#ef4444'}}></div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-right text-xs">
+                                  <span className={etf.oscScore>=70?'text-emerald-600 font-bold':'text-slate-500'}>{etf.cvPct}%</span>
+                                  <div className="text-[9px] text-slate-300">{etf.oscScore}分</div>
+                                </td>
+                                <td className="px-4 py-3 text-right text-xs">
+                                  <span className={etf.meanRevScore>=70?'text-emerald-600 font-bold':'text-slate-500'}>{etf.crossCount}次</span>
+                                  <div className="text-[9px] text-slate-300">{etf.meanRevScore}分</div>
+                                </td>
+                                <td className="px-4 py-3 text-right text-xs">
+                                  <span className={etf.trendScore>=70?'text-emerald-600 font-bold':etf.trendScore<40?'text-red-400':'text-slate-500'}>{etf.trendPct}%</span>
+                                  <div className="text-[9px] text-slate-300">{etf.trendScore}分</div>
+                                </td>
+                                <td className="px-4 py-3 text-right text-xs">
+                                  <span className={etf.valPct<=35?'text-emerald-600 font-bold':etf.valPct>65?'text-red-400':'text-slate-500'}>{etf.valPct}%</span>
+                                  <div className="text-[9px] text-slate-300">{etf.valScore}分</div>
+                                </td>
+                                <td className="px-4 py-3 text-right text-xs font-bold text-violet-600">{etf.suggestGridPct}%</td>
+                                <td className="px-4 py-3 text-right text-xs text-slate-500">{etf.rangeDropPct}%</td>
+                                <td className={`px-4 py-3 text-right text-xs font-bold ${etf.rotScore>0?'text-red-500':etf.rotScore<0?'text-green-600':'text-slate-400'}`}>
+                                  {etf.rotScore!=null?(etf.rotScore>0?'+':'')+etf.rotScore:'—'}
+                                </td>
+                                <td className={`px-4 py-3 text-right text-xs ${etf.rsi>=70?'text-red-500 font-bold':etf.rsi<=30?'text-emerald-600 font-bold':'text-slate-500'}`}>
+                                  {etf.rsi ?? '—'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Card>
+
+                    {/* 网格建仓决策框架 */}
+                    <Card className="p-5">
+                      <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <Icon name="CheckCircle" size={16} className="text-violet-500" /> 网格建仓决策框架
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {[
+                          {
+                            icon: 'TrendingUp', color: 'emerald', title: '✅ 立即可建仓',
+                            desc: '网格评分 ≥65 · 估值分位 <40% · RSI <65 · 轮动分 +5~+25',
+                            items: gridCandidates.filter(e => e.finalScore>=65 && e.valPct<40 && (e.rsi??100)<65 && (e.rotScore??-99)>0 && (e.rotScore??99)<30),
+                          },
+                          {
+                            icon: 'Clock', color: 'amber', title: '⏳ 等待机会',
+                            desc: '网格评分 ≥50，但估值偏高或RSI过热，等回调',
+                            items: gridCandidates.filter(e => e.finalScore>=50 && !(e.finalScore>=65 && e.valPct<40 && (e.rsi??100)<65 && (e.rotScore??-99)>0 && (e.rotScore??99)<30)),
+                          },
+                          {
+                            icon: 'X', color: 'red', title: '❌ 暂不适合',
+                            desc: '网格评分 <50，或趋势过强，或弱势下跌',
+                            items: gridCandidates.filter(e => e.finalScore<50),
+                          },
+                        ].map(group => (
+                          <div key={group.title} className={`rounded-xl border p-4 bg-${group.color}-50 border-${group.color}-100`}>
+                            <div className={`font-bold text-${group.color}-700 text-sm mb-1`}>{group.title}</div>
+                            <div className={`text-[10px] text-${group.color}-500 mb-3 leading-relaxed`}>{group.desc}</div>
+                            {group.items.length === 0 ? (
+                              <div className="text-xs text-slate-400 italic">暂无</div>
+                            ) : (
+                              <div className="space-y-1.5">
+                                {group.items.slice(0,5).map(etf => (
+                                  <div key={etf.code} className="flex items-center justify-between bg-white/70 rounded-lg px-2.5 py-1.5">
+                                    <div>
+                                      <div className="text-xs font-medium text-slate-800 leading-tight">{etf.name}</div>
+                                      <div className="text-[9px] font-mono text-slate-400">{etf.code}</div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className={`text-xs font-bold ${etf.gradeColor}`}>{etf.finalScore}</div>
+                                      <div className="text-[9px] text-violet-500">{etf.suggestGridPct}%网格</div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ===== 热力图 Tab ===== */}
           {activeRotTab === 'heatmap' && (
