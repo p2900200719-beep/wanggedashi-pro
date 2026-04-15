@@ -234,77 +234,86 @@
     // 全局 JSONP 请求计数器，保证每次请求 callback key 唯一
     let _jsonpSeq = 0;
 
+    // 场内ETF/股票数据获取
+    // 主接口：fund.eastmoney.com/pingzhongdata（天天基金，场内ETF和场外基金都有，已知可访问）
+    // 备用接口：push2his.eastmoney.com K线（部分环境可能屏蔽）
     const fetchStockRealData = (code) => {
       return new Promise((resolve, reject) => {
 
-        // 市场前缀判断
-        const getPrefix = (c) => {
-          if (/^(51|52|53|54|55|56|57|58|59|60|68|11|78)/.test(c)) return "1"; // 沪市
-          if (/^(00|15|16|17|30|12|13)/.test(c)) return "0";                    // 深市
-          return /^(5|6|9)/.test(c) ? "1" : "0";
-        };
-
-        // JSONP：cb= 写在 URL 里，script.id 用唯一 seq 避免冲突
-        const jsonp = (url, cbName) => new Promise((res, rej) => {
+        // ── 主接口：天天基金 pingzhongdata（与场外基金同域名，已验证可用）──
+        const tryFundApi = () => new Promise((res, rej) => {
+          const ts = Date.now();
           const script = document.createElement('script');
-          script.src = url;
+          script.src = `https://fund.eastmoney.com/pingzhongdata/${code}.js?v=${ts}`;
+          let settled = false;
           const cleanup = () => {
-            try { delete window[cbName]; } catch(_) {}
             if (script.parentNode) script.parentNode.removeChild(script);
+            try { delete window.fS_name; delete window.Data_netWorthTrend; } catch(_) {}
           };
-          window[cbName] = (data) => { cleanup(); res(data); };
-          script.onerror = () => { cleanup(); rej(new Error('net')); };
+          script.onload = () => {
+            if (settled) return; settled = true;
+            try {
+              if (window.Data_netWorthTrend && window.Data_netWorthTrend.length > 0) {
+                const name = window.fS_name || `标的${code}`;
+                const data = window.Data_netWorthTrend.map(item => ({
+                  date:         new Date(item.x + 43200000).toISOString().split('T')[0],
+                  netValue:     parseFloat(item.y) || 0,
+                  volume:       0,
+                  amount:       0,
+                  equityReturn: parseFloat(item.equityReturn) || 0,
+                })).filter(d => d.netValue > 0);
+                if (data.length > 0) { cleanup(); res({ name, data }); }
+                else { cleanup(); rej(new Error('nodata')); }
+              } else { cleanup(); rej(new Error('empty')); }
+            } catch(e) { cleanup(); rej(e); }
+          };
+          script.onerror = () => { if (settled) return; settled = true; cleanup(); rej(new Error('net')); };
           document.body.appendChild(script);
         });
 
-        // 拉取指定市场的K线
-        const fetchByPrefix = async (prefix) => {
-          const secId = `${prefix}.${code}`;
-          const uid = `${Date.now()}_${++_jsonpSeq}`;  // 全局唯一
-
-          let stockName = '';
-          try {
-            const cbN = `cb_sn_${uid}`;
-            const nr = await jsonp(
-              `https://push2.eastmoney.com/api/qt/stock/get?cb=${cbN}&secid=${secId}&fields=f58`,
-              cbN
-            );
-            stockName = nr?.data?.f58 || '';
-          } catch(_) {}
-
-          const cbK = `cb_sk_${uid}`;
-          const kRes = await jsonp(
-            `https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=${cbK}&secid=${secId}&fields1=f1&fields2=f51,f53,f57,f58&klt=101&fqt=1&end=20500101&lmt=1000`,
-            cbK
-          );
-
-          if (!kRes?.data?.klines?.length) throw new Error('empty');
-
-          const data = kRes.data.klines.map(line => {
-            const p = line.split(',');
-            return {
-              date:         p[0],
-              netValue:     parseFloat(p[1]) || 0,
-              volume:       parseFloat(p[2]) || 0,
-              amount:       parseFloat(p[3]) || 0,
-              equityReturn: 0,
+        // ── 备用接口：push2his K线（部分环境可用）──────
+        const tryKlineApi = () => new Promise((res, rej) => {
+          const getPrefix = (c) => {
+            if (/^(51|52|53|54|55|56|57|58|59|60|68|11|78)/.test(c)) return "1";
+            if (/^(00|15|16|17|30|12|13)/.test(c)) return "0";
+            return /^(5|6|9)/.test(c) ? "1" : "0";
+          };
+          const jsonp = (url, cbName) => new Promise((r, e) => {
+            const script = document.createElement('script');
+            script.src = url;
+            const cleanup = () => {
+              try { delete window[cbName]; } catch(_) {}
+              if (script.parentNode) script.parentNode.removeChild(script);
             };
-          }).filter(d => d.netValue > 0);
+            window[cbName] = (data) => { cleanup(); r(data); };
+            script.onerror = () => { cleanup(); e(new Error('net')); };
+            document.body.appendChild(script);
+          });
+          (async () => {
+            try {
+              const prefix = getPrefix(code);
+              const secId = `${prefix}.${code}`;
+              const uid = `${Date.now()}_${++_jsonpSeq}`;
+              const cbK = `cb_sk_${uid}`;
+              const kRes = await jsonp(
+                `https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=${cbK}&secid=${secId}&fields1=f1&fields2=f51,f53,f57,f58&klt=101&fqt=1&end=20500101&lmt=1000`,
+                cbK
+              );
+              if (!kRes?.data?.klines?.length) { rej(new Error('empty')); return; }
+              const data = kRes.data.klines.map(line => {
+                const p = line.split(',');
+                return { date: p[0], netValue: parseFloat(p[1]) || 0, volume: parseFloat(p[2]) || 0, amount: parseFloat(p[3]) || 0, equityReturn: 0 };
+              }).filter(d => d.netValue > 0);
+              if (!data.length) { rej(new Error('nodata')); return; }
+              res({ name: kRes.data.name || `标的${code}`, data });
+            } catch(e) { rej(e); }
+          })();
+        });
 
-          if (!data.length) throw new Error('nodata');
-          return { name: stockName || kRes.data.name || `标的${code}`, data };
-        };
-
-        const p1 = getPrefix(code);
-        const p2 = p1 === '1' ? '0' : '1';
-
-        fetchByPrefix(p1)
+        // 先试天天基金接口，失败再试K线接口
+        tryFundApi()
           .then(resolve)
-          .catch(() =>
-            fetchByPrefix(p2)
-              .then(resolve)
-              .catch(() => reject('数据获取失败，请确认代码正确'))
-          );
+          .catch(() => tryKlineApi().then(resolve).catch(() => reject('数据获取失败，请确认代码正确')));
       });
     };
 
