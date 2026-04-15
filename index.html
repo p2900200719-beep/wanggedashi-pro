@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; transition: background 0.3s, color 0.3s; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -32,263 +32,6 @@
     .sync-dot.syncing { background:#f59e0b; animation: spin 1s linear infinite; border-radius:0; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
     .sync-dot.ok { background:#10b981; }
     .sync-dot.err { background:#ef4444; }
-
-    /* ===== 夜间模式 ===== */
-    /*
-      色板：
-        主背景   #1a1d23  (深灰，不纯黑，护眼)
-        卡片背景  #22262f  (比主背景亮一档)
-        浮层/输入 #2a2f3a  (再亮一档，有层次)
-        边框      #383e4a  (柔和分隔线)
-        主文字    #e8eaf0  (近白，不刺眼)
-        次文字    #9aa0b0  (灰蓝，辅助信息)
-        暗文字    #5a6070  (更暗的辅助)
-        强调色    #7c8ff5  (indigo 偏亮，替代纯紫)
-        绿色      #34c98a  (柔和绿)
-        红色      #f47068  (柔和红)
-        橙色      #f59e5a  (柔和橙)
-    */
-    .dark { color-scheme: dark; }
-    .dark body, body.dark {
-      background: #1a1d23 !important;
-      color: #e8eaf0 !important;
-    }
-    .dark ::-webkit-scrollbar-track { background: #22262f; }
-    .dark ::-webkit-scrollbar-thumb { background: #383e4a; border-radius: 4px; }
-    .dark ::-webkit-scrollbar-thumb:hover { background: #4a5266; }
-
-    /* === 背景层次 === */
-    .dark .bg-slate-50  { background-color: #1a1d23 !important; }
-    .dark .bg-white     { background-color: #22262f !important; }
-    .dark .bg-slate-100 { background-color: #2a2f3a !important; }
-    .dark .bg-slate-200 { background-color: #383e4a !important; }
-
-    /* === 边框 === */
-    .dark .border-slate-200 { border-color: #383e4a !important; }
-    .dark .border-slate-100 { border-color: #2a2f3a !important; }
-    .dark .border-slate-300 { border-color: #4a5266 !important; }
-
-    /* === 文字 === */
-    .dark .text-slate-800 { color: #e8eaf0 !important; }
-    .dark .text-slate-700 { color: #d4d8e8 !important; }
-    .dark .text-slate-600 { color: #b0b8cc !important; }
-    .dark .text-slate-500 { color: #9aa0b0 !important; }
-    .dark .text-slate-400 { color: #6e7585 !important; }
-    .dark .text-slate-300 { color: #5a6070 !important; }
-
-    /* === 卡片与面板 === */
-    .dark .bg-slate-50 { background-color: #1a1d23 !important; }
-    .dark .shadow-sm   { box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
-    .dark .shadow-xl   { box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important; }
-    .dark .shadow-2xl  { box-shadow: 0 25px 60px rgba(0,0,0,0.6) !important; }
-
-    /* === input / select === */
-    .dark input, .dark select, .dark textarea {
-      background-color: #2a2f3a !important;
-      border-color: #383e4a !important;
-      color: #e8eaf0 !important;
-    }
-    .dark input::placeholder { color: #5a6070 !important; }
-    .dark input[type=date]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
-    .dark input:focus, .dark select:focus {
-      border-color: #7c8ff5 !important;
-      box-shadow: 0 0 0 2px rgba(124,143,245,0.2) !important;
-    }
-
-    /* === 强调色背景块（柔和，不刺眼）=== */
-    .dark .bg-indigo-50  { background-color: #242840 !important; }
-    .dark .bg-emerald-50 { background-color: #1a2e28 !important; }
-    .dark .bg-red-50     { background-color: #2e1e20 !important; }
-    .dark .bg-amber-50   { background-color: #2c2415 !important; }
-    .dark .bg-blue-50    { background-color: #1a2535 !important; }
-    .dark .bg-green-50   { background-color: #1a2e28 !important; }
-
-    /* === 强调色边框 === */
-    .dark .border-indigo-100  { border-color: #363d60 !important; }
-    .dark .border-indigo-200  { border-color: #434d7a !important; }
-    .dark .border-emerald-100 { border-color: #264038 !important; }
-    .dark .border-red-100     { border-color: #4a2a2c !important; }
-    .dark .border-amber-100   { border-color: #4a3a20 !important; }
-
-    /* === 强调色文字（提亮，保持可读）=== */
-    .dark .text-indigo-600  { color: #7c8ff5 !important; }
-    .dark .text-indigo-700  { color: #9aaaf8 !important; }
-    .dark .text-emerald-600 { color: #34c98a !important; }
-    .dark .text-emerald-700 { color: #4dd99a !important; }
-    .dark .text-emerald-400 { color: #34c98a !important; }
-    .dark .text-red-500     { color: #f47068 !important; }
-    .dark .text-red-600     { color: #f47068 !important; }
-    .dark .text-red-700     { color: #f68880 !important; }
-    .dark .text-red-400     { color: #f47068 !important; }
-    .dark .text-amber-600   { color: #f59e5a !important; }
-    .dark .text-amber-400   { color: #f5b474 !important; }
-    .dark .text-blue-500    { color: #60a5fa !important; }
-    .dark .text-orange-500  { color: #f59e5a !important; }
-    .dark .text-green-600   { color: #34c98a !important; }
-
-    /* === 按钮 === */
-    .dark .bg-indigo-600  { background-color: #4f5fa8 !important; }
-    .dark .bg-indigo-600:hover { background-color: #5c6dba !important; }
-    .dark .bg-emerald-600 { background-color: #1f8a5e !important; }
-    .dark .bg-emerald-600:hover { background-color: #239970 !important; }
-
-    /* === Header === */
-    .dark header {
-      background-color: #22262f !important;
-      border-color: #383e4a !important;
-    }
-
-    /* === 导航 Tab === */
-    .dark .bg-slate-100.p-1.rounded-lg { background-color: #1a1d23 !important; }
-    .dark nav button { color: #9aa0b0 !important; }
-    .dark nav button.bg-white {
-      background-color: #2a2f3a !important;
-      color: #7c8ff5 !important;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
-    }
-
-    /* === 表格 === */
-    .dark thead, .dark thead tr { background-color: #22262f !important; }
-    .dark tbody tr:hover         { background-color: #252930 !important; }
-    .dark .divide-y > * + *      { border-color: #2a2f3a !important; }
-    .dark .divide-slate-100 > * + * { border-color: #2a2f3a !important; }
-
-    /* === Hover 状态 === */
-    .dark .hover\:bg-slate-50:hover   { background-color: #252930 !important; }
-    .dark .hover\:bg-slate-100:hover  { background-color: #2a2f3a !important; }
-    .dark .hover\:bg-slate-200:hover  { background-color: #383e4a !important; }
-    .dark .hover\:bg-indigo-50:hover  { background-color: #2a2f4a !important; }
-    .dark .hover\:bg-red-50:hover     { background-color: #2e1e20 !important; }
-    .dark .hover\:bg-emerald-100:hover { background-color: #1f3830 !important; }
-    .dark .hover\:bg-red-100:hover    { background-color: #3a2224 !important; }
-
-    /* === 弹窗 === */
-    .dark .bg-black\/60 { background-color: rgba(0,0,0,0.75) !important; }
-    .dark .rounded-2xl.shadow-2xl { background-color: #22262f !important; }
-
-    /* === 登录页 === */
-    .dark .bg-gradient-to-br { background: #1a1d23 !important; }
-    .dark .shadow-lg.shadow-indigo-200 { box-shadow: 0 4px 20px rgba(124,143,245,0.3) !important; }
-
-    /* === 图表 === */
-    .dark .recharts-cartesian-grid line { stroke: #2a2f3a !important; }
-    .dark .recharts-text { fill: #9aa0b0 !important; }
-
-    /* === 行内信息区（bg-slate-50 小块）=== */
-    .dark .bg-slate-50.p-3,
-    .dark .bg-slate-50.p-2,
-    .dark .bg-slate-50.rounded-lg { background-color: #2a2f3a !important; }
-
-    /* === 资产切换 pill === */
-    .dark .bg-indigo-50.border-indigo-200 {
-      background-color: #242840 !important;
-      border-color: #434d7a !important;
-    }
-
-    /* === 进度条轨道 === */
-    .dark .bg-slate-100.rounded-full { background-color: #383e4a !important; }
-
-    /* === 同步状态文字 === */
-    .dark .text-emerald-500 { color: #34c98a !important; }
-
-    /* === 左侧边栏夜间模式 === */
-    .dark aside {
-      background-color: #22262f !important;
-      border-color: #383e4a !important;
-    }
-    .dark aside .border-slate-100 { border-color: #2a2f3a !important; }
-    .dark aside .border-slate-200 { border-color: #383e4a !important; }
-    .dark aside .bg-white         { background-color: #22262f !important; }
-    .dark aside .text-slate-400   { color: #6e7585 !important; }
-    .dark aside .text-slate-700   { color: #d4d8e8 !important; }
-    .dark aside .text-slate-600   { color: #b0b8cc !important; }
-    .dark aside .text-slate-500   { color: #9aa0b0 !important; }
-    .dark aside .text-slate-300   { color: #5a6070 !important; }
-    .dark aside .hover\:bg-slate-50:hover { background-color: #2a2f3a !important; }
-    .dark aside .bg-indigo-50     { background-color: #242840 !important; }
-    .dark aside .border-indigo-200 { border-color: #434d7a !important; }
-    .dark aside .text-indigo-700  { color: #9aaaf8 !important; }
-    .dark aside .text-indigo-600  { color: #7c8ff5 !important; }
-    .dark aside .text-indigo-500  { color: #7c8ff5 !important; }
-    .dark aside .bg-indigo-500    { background-color: #4f5fa8 !important; }
-    .dark aside .hover\:bg-indigo-50:hover { background-color: #2a2f4a !important; }
-    .dark aside .border-dashed    { border-color: #383e4a !important; }
-    .dark aside .hover\:border-indigo-300:hover { border-color: #5060a0 !important; }
-
-    /* ===== 移动端适配 ===== */
-
-    @media (max-width: 767px) {
-      aside { display: none !important; }
-      .mobile-asset-bar { display: flex !important; }
-      .mobile-bottom-nav { display: flex !important; }
-      /* 桌面看板隐藏，移动看板显示 */
-      .desktop-dashboard { display: none !important; }
-      .mobile-dashboard { display: block !important; }
-      main.flex-1 { padding-bottom: 68px !important; }
-      .max-w-5xl.mx-auto.px-4.py-6 { padding: 10px 10px 0 10px !important; }
-      /* 非看板 tab 的通用卡片适配 */
-      .lg\:col-span-12, .lg\:col-span-8, .lg\:col-span-4, .lg\:col-span-2 {
-        grid-column: span 1 !important;
-      }
-      .grid.grid-cols-1.lg\:grid-cols-12 { grid-template-columns: 1fr !important; }
-      .grid.grid-cols-1.lg\:grid-cols-2  { grid-template-columns: 1fr !important; }
-      .h-\[500px\] { height: 320px !important; }
-      .h-\[450px\] { height: 300px !important; }
-    }
-
-    @media (min-width: 768px) {
-      .mobile-asset-bar  { display: none !important; }
-      .mobile-bottom-nav { display: none !important; }
-      .desktop-dashboard { display: grid !important; }
-      .mobile-dashboard  { display: none !important; }
-    }
-
-    .mobile-asset-bar {
-      display: none;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      gap: 8px;
-      padding: 8px 12px;
-      background: white;
-      border-bottom: 1px solid #e2e8f0;
-      flex-shrink: 0;
-    }
-    .mobile-asset-bar::-webkit-scrollbar { display: none; }
-
-    .mobile-bottom-nav {
-      display: none;
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      height: 60px;
-      background: white;
-      border-top: 1px solid #e2e8f0;
-      z-index: 30;
-      align-items: stretch;
-      box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
-    }
-    .dark .mobile-bottom-nav { background:#22262f !important; border-color:#383e4a !important; }
-    .dark .mobile-asset-bar  { background:#22262f !important; border-color:#383e4a !important; }
-
-    /* 移动看板默认隐藏 */
-    .mobile-dashboard { display: none; }
-
-    /* 手机端总览弹窗优化 */
-    @media (max-width: 767px) {
-      /* 表格横向滚动 */
-      .overview-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      /* 弹窗内边距缩小 */
-      .overview-body { padding: 12px !important; }
-      /* 汇总卡片2列 */
-      .overview-summary-grid { grid-template-columns: 1fr 1fr !important; }
-      /* 网格点位表字体缩小 */
-      .overview-grid-table td, .overview-grid-table th { padding: 6px 8px !important; font-size: 11px !important; }
-      .overview-grid-table .asset-name { max-width: 70px !important; }
-      /* 弹窗关闭按钮加大点击区域 */
-      .overview-close-btn { padding: 10px !important; }
-      /* 底部留出导航栏空间 */
-      .overview-scroll-area { padding-bottom: 72px; }
-    }
   </style>
 </head>
 
@@ -344,6 +87,13 @@
         LogOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
         Wifi: <><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></>,
         Calendar: <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+        Repeat: <><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></>,
+        Layers: <><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></>,
+        Signal: <><line x1="2" y1="20" x2="2" y2="14"/><line x1="7" y1="20" x2="7" y2="4"/><line x1="12" y1="20" x2="12" y2="10"/><line x1="17" y1="20" x2="17" y2="6"/><line x1="22" y1="20" x2="22" y2="2"/></>,
+        AlertTriangle: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>,
+        Star: <><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></>,
+        Search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+        Grid: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>,
       };
       return (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -374,8 +124,8 @@
           .from('grid_manager')
           .select('manager')
           .eq('user_code', userCode)
-          .maybeSingle();
-        if (error) throw error;
+          .single();
+        if (error && error.code !== 'PGRST116') throw error;
         return data ? data.manager : null;
       },
       async setManager(userCode, manager) {
@@ -390,8 +140,8 @@
           .select('config')
           .eq('user_code', userCode)
           .eq('asset_id', String(assetId))
-          .maybeSingle();
-        if (error) throw error;
+          .single();
+        if (error && error.code !== 'PGRST116') throw error;
         return data ? data.config : null;
       },
       async setConfig(userCode, assetId, config) {
@@ -406,8 +156,8 @@
           .select('records')
           .eq('user_code', userCode)
           .eq('asset_id', String(assetId))
-          .maybeSingle();
-        if (error) throw error;
+          .single();
+        if (error && error.code !== 'PGRST116') throw error;
         return data ? data.records : null;
       },
       async setRecords(userCode, assetId, records) {
@@ -471,113 +221,28 @@
       });
     };
 
-    // 单标的模板下载
     const downloadCSVTemplate = () => {
-      const headers = "\uFEFF日期(YYYY-MM-DD),类型(buy/sell),单价,份额\n";
-      const example = "2024-01-15,buy,1.2500,4000\n2024-02-20,sell,1.3500,1500";
+      const headers = "\uFEFF日期(YYYY-MM-DD),类型(buy/sell),单价,金额\n";
+      const example = "2024-01-15,buy,1.2500,5000\n2024-02-20,sell,1.3500,2000";
       const blob = new Blob([headers + example], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a'); link.href = url; link.download = "单标的导入模板.csv"; link.click();
+      const link = document.createElement('a');
+      link.href = url; link.download = "网格交易导入模板.csv"; link.click();
     };
 
-    // 批量导入模板下载（多标的）
-    const downloadBatchTemplate = (assets) => {
-      let csv = "\uFEFF标的代码,标的名称,日期(YYYY-MM-DD),类型(buy/sell),单价,份额\n";
-      if (assets && assets.length > 0) {
-        assets.forEach(a => {
-          csv += `${a.code},${a.name},2024-01-15,buy,1.2500,4000\n`;
-          csv += `${a.code},${a.name},2024-02-20,sell,1.3500,1500\n`;
-        });
-      } else {
-        csv += "513650,标普500ETF南方,2024-01-15,buy,1.2500,4000\n";
-        csv += "513650,标普500ETF南方,2024-02-20,sell,1.3500,1500\n";
-        csv += "159852,软件ETF嘉实,2024-01-18,buy,0.8800,6000\n";
-      }
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a'); link.href = url; link.download = "批量导入模板.csv"; link.click();
-    };
-
-    // 解析单标的 CSV（单价+份额）
     const parseCSV = (text) => {
       const lines = text.split('\n'); const result = [];
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim(); if (!line) continue;
-        const parts = line.replace(/，/g, ',').split(',');
+        const parts = line.replace('，', ',').split(',');
         if (parts.length >= 4) {
           const dateStr = parts[0].trim(); const typeStr = parts[1].trim().toLowerCase();
-          const price = parseFloat(parts[2].trim()); const sharesOrAmount = parseFloat(parts[3].trim());
+          const price = parseFloat(parts[2].trim()); const amount = parseFloat(parts[3].trim());
           const type = (typeStr === '卖出' || typeStr === 'sell') ? 'sell' : 'buy';
-          if (!isNaN(price) && !isNaN(sharesOrAmount)) {
-            // 兼容旧版（金额）和新版（份额）：金额通常远大于份额
-            const isAmount = sharesOrAmount > price * 100;
-            const shares = isAmount ? parseFloat((sharesOrAmount / price).toFixed(2)) : sharesOrAmount;
-            const amount = isAmount ? sharesOrAmount : parseFloat((price * sharesOrAmount).toFixed(2));
-            result.push({ id: Date.now() + i, date: safeParseDate(dateStr), type, price, amount, shares });
-          }
+          if (!isNaN(price) && !isNaN(amount)) result.push({ id: Date.now() + i, date: safeParseDate(dateStr), type, price, amount, shares: parseFloat((amount / price).toFixed(2)) });
         }
       }
       return result;
-    };
-
-    // 解析批量 CSV（含标的代码列）→ 按代码分组
-    const parseBatchCSV = (text) => {
-      const lines = text.split('\n');
-      const byCode = {}; // { code: [records] }
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim(); if (!line) continue;
-        const parts = line.replace(/，/g, ',').split(',');
-        if (parts.length >= 6) {
-          const code     = parts[0].trim();
-          // parts[1] = name (忽略)
-          const dateStr  = parts[2].trim();
-          const typeStr  = parts[3].trim().toLowerCase();
-          const price    = parseFloat(parts[4].trim());
-          const sharesRaw = parseFloat(parts[5].trim());
-          if (!code || isNaN(price) || isNaN(sharesRaw)) continue;
-          const type   = (typeStr === '卖出' || typeStr === 'sell') ? 'sell' : 'buy';
-          const isAmount = sharesRaw > price * 100;
-          const shares = isAmount ? parseFloat((sharesRaw / price).toFixed(2)) : sharesRaw;
-          const amount = isAmount ? sharesRaw : parseFloat((price * sharesRaw).toFixed(2));
-          if (!byCode[code]) byCode[code] = [];
-          byCode[code].push({ id: Date.now() + i * 100 + Math.random(), date: safeParseDate(dateStr), type, price, amount, shares });
-        }
-      }
-      return byCode;
-    };
-
-    // =============================================
-    // 网格点位计算（统一逻辑，与完整网格计划保持一致）
-    // =============================================
-    const calcGridLevels = (lastPrice, config, totalShares, levels = 3) => {
-      const gridPct = config.gridSizePct / 100;
-      const skyLine = config.skyLine;
-      const groundLine = config.groundLine;
-      const minBuy = config.minBuy || 1000;
-      const maxBuy = config.maxBuy || 5000;
-
-      const sellLevels = [];
-      let sp = lastPrice * (1 + gridPct);
-      for (let i = 1; i <= levels; i++) {
-        let sellRatio = skyLine > lastPrice ? (sp - lastPrice) / (skyLine - lastPrice) : 1;
-        sellRatio = Math.max(0, Math.min(1, sellRatio));
-        const shares = Math.round(totalShares * sellRatio);
-        sellLevels.push({ level: i, price: sp, shares, amount: Math.round(shares * sp) });
-        sp = sp * (1 + gridPct);
-      }
-
-      const buyLevels = [];
-      let bp = lastPrice * (1 - gridPct);
-      for (let i = 1; i <= levels; i++) {
-        let buyRatio = (skyLine - groundLine) > 0 ? (skyLine - bp) / (skyLine - groundLine) : 0.5;
-        buyRatio = Math.max(0, Math.min(1, buyRatio));
-        const amount = Math.round(minBuy + buyRatio * (maxBuy - minBuy));
-        const shares = bp > 0 ? Math.round(amount / bp) : 0;
-        buyLevels.push({ level: i, price: bp, shares, amount });
-        bp = bp * (1 - gridPct);
-      }
-
-      return { sellLevels, buyLevels };
     };
 
     // =============================================
@@ -683,17 +348,8 @@
     // =============================================
     // 仪表盘（单资产）
     // =============================================
-    function TradeDashboard({ userCode, assetId, assetConfig, onUpdateAssetName, isBatchImporting, batchImportResult, setBatchImportResult, handleBatchImport, downloadBatchTemplate, assetManagerAssets }) {
+    function TradeDashboard({ userCode, assetId, assetConfig, onUpdateAssetName }) {
       const [activeTab, setActiveTab] = useState('dashboard');
-
-      // 注册全局 tab 切换（供手机端底部导航调用）
-      useEffect(() => {
-        window.__setMobileTab = (tab) => setActiveTab(tab);
-        return () => { delete window.__setMobileTab; };
-      }, []);
-
-      // 同步当前 tab 到全局（供底部导航高亮）
-      useEffect(() => { window.__currentTab = activeTab; }, [activeTab]);
       const [syncStatus, setSyncStatus] = useState('ok'); // ok | syncing | err
 
       const defaultConfig = {
@@ -769,7 +425,7 @@
       const [currentNetValue, setCurrentNetValue] = useState('');
       const [currentDataDate, setCurrentDataDate] = useState('');
       const [isClearConfirming, setIsClearConfirming] = useState(false);
-      const [manualRecord, setManualRecord] = useState({ date: '', price: '', shares: '', type: 'buy', id: null });
+      const [manualRecord, setManualRecord] = useState({ date: '', price: '', amount: '', type: 'buy', id: null });
       const [showManualForm, setShowManualForm] = useState(false);
       const [isEditMode, setIsEditMode] = useState(false);
       const [isOptimizing, setIsOptimizing] = useState(false);
@@ -1038,53 +694,15 @@
       };
 
       const handleManualSubmit = () => {
-        if (!manualRecord.date || !manualRecord.price || !manualRecord.shares) { alert("请填写完整信息"); return; }
-        const price = parseFloat(manualRecord.price), shares = parseFloat(manualRecord.shares);
-        const amount = parseFloat((price * shares).toFixed(2));
-        const rec = { id: isEditMode && manualRecord.id ? manualRecord.id : Date.now(), date: safeParseDate(manualRecord.date), type: manualRecord.type, price, amount, shares };
+        if (!manualRecord.date || !manualRecord.price || !manualRecord.amount) { alert("请填写完整信息"); return; }
+        const price = parseFloat(manualRecord.price), amount = parseFloat(manualRecord.amount);
+        const rec = { id: isEditMode && manualRecord.id ? manualRecord.id : Date.now(), date: safeParseDate(manualRecord.date), type: manualRecord.type, price, amount, shares: parseFloat((amount / price).toFixed(2)) };
         if (isEditMode) updateRecords(records.map(r => r.id === rec.id ? rec : r));
         else updateRecords([rec, ...records]);
-        setShowManualForm(false); setIsEditMode(false); setManualRecord({ date: '', price: '', shares: '', type: 'buy', id: null });
+        setShowManualForm(false); setIsEditMode(false); setManualRecord({ date: '', price: '', amount: '', type: 'buy', id: null });
       };
 
-      // 快捷输入：智能解析粘贴文本
-      const handleQuickParse = (text) => {
-        if (!text.trim()) return;
-        let type = 'buy';
-        if (/卖出|sell|sold/i.test(text)) type = 'sell';
-        else if (/买入|buy|bought/i.test(text)) type = 'buy';
-
-        // 识别日期：2024-01-15 / 2024/01/15 / 20240115
-        const dateMatch = text.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
-        const dateCompact = text.match(/(\d{4})(\d{2})(\d{2})/);
-        let date = new Date().toISOString().split('T')[0];
-        if (dateMatch) date = `${dateMatch[1]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[3].padStart(2,'0')}`;
-        else if (dateCompact) date = `${dateCompact[1]}-${dateCompact[2]}-${dateCompact[3]}`;
-
-        // 识别价格（单价通常是小数，优先匹配带小数的数字）
-        const numMatches = [...text.matchAll(/[\d]+\.[\d]+|[\d]{4,}/g)].map(m => parseFloat(m[0]));
-        // 过滤掉明显是日期的数字
-        const nums = numMatches.filter(n => n > 0 && n < 100000 && !(n > 20000101 && n < 20991231));
-        
-        // 价格：较小的小数；份额：较大的整数或带小数的大数
-        let price = '', shares = '';
-        const decimals = nums.filter(n => n < 1000 && !Number.isInteger(n));
-        const integers = nums.filter(n => n >= 1);
-        if (decimals.length > 0) price = decimals[0].toString();
-        if (integers.length > 1) shares = integers.find(n => n !== parseFloat(price))?.toString() || '';
-        else if (integers.length === 1 && !price) price = integers[0].toString();
-        else if (integers.length === 1 && price) shares = integers[0].toString();
-
-        setManualRecord(prev => ({
-          ...prev,
-          type,
-          date: date || prev.date,
-          price: price || prev.price,
-          shares: shares || prev.shares,
-        }));
-      };
-
-      const startEditRecord = (record) => { setManualRecord({ date: record.date.split('T')[0], price: record.price, shares: record.shares, type: record.type, id: record.id }); setIsEditMode(true); setShowManualForm(true); };
+      const startEditRecord = (record) => { setManualRecord({ date: record.date.split('T')[0], price: record.price, amount: record.amount, type: record.type, id: record.id }); setIsEditMode(true); setShowManualForm(true); };
 
       const handleFileUpload = (e) => {
         const file = e.target.files[0]; if (!file) return;
@@ -1135,319 +753,7 @@
           </nav>
 
           {activeTab === 'dashboard' && (
-            <>
-            {/* ========== 移动端专属看板 ========== */}
-            <div className="mobile-dashboard space-y-3 pb-4">
-
-              {/* 顶部：标的名 + 净值 + 刷新 */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <div className="font-bold text-slate-800 text-base leading-tight">{config.fundName}</div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className={`text-[10px] text-white px-1.5 py-0.5 rounded font-mono ${config.assetType === 'stock' ? 'bg-blue-500' : 'bg-orange-500'}`}>{config.assetType === 'stock' ? '股票' : '基金'}</span>
-                      <span className="text-[10px] font-mono text-slate-400">{config.fundCode}</span>
-                      {currentDataDate && <span className="text-[10px] text-slate-400">{currentDataDate}</span>}
-                    </div>
-                  </div>
-                  <button onClick={() => loadData()} disabled={isLoading} className={`text-indigo-500 p-2 rounded-full hover:bg-indigo-50 ${isLoading ? 'animate-spin' : ''}`}><Icon name="RefreshCw" size={18} /></button>
-                </div>
-                {/* 净值输入 */}
-                <div className="flex items-baseline gap-1 mb-3">
-                  <span className="text-2xl font-bold text-slate-700">¥</span>
-                  <input type="number" value={currentNetValue} onChange={e => setCurrentNetValue(e.target.value)}
-                    className="flex-1 text-3xl font-bold text-slate-800 border-b-2 border-dashed border-slate-200 focus:border-indigo-400 outline-none bg-transparent"
-                    placeholder="0.0000" />
-                </div>
-                {/* 操作建议 */}
-                {nextActionAnalysis && (
-                  <div className={`text-xs px-3 py-2 rounded-xl flex items-center gap-2 font-medium ${
-                    nextActionAnalysis.actionType.includes('buy') ? 'bg-emerald-50 text-emerald-700' :
-                    nextActionAnalysis.actionType.includes('sell') ? 'bg-red-50 text-red-700' :
-                    nextActionAnalysis.actionType === 'init' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-50 text-slate-600'}`}>
-                    <Icon name={nextActionAnalysis.actionType === 'init' ? 'Flag' : 'Brain'} size={13} />
-                    {nextActionAnalysis.suggestion}
-                  </div>
-                )}
-              </div>
-
-              {/* 买卖操作区 */}
-              {amountAdvice && nextActionAnalysis && (
-                <div className="grid grid-cols-2 gap-3">
-                  {nextActionAnalysis.actionType === 'init' ? (
-                    <button onClick={() => handleTrade('buy')} className="col-span-2 p-4 rounded-2xl bg-indigo-600 text-white flex flex-col items-center shadow-lg shadow-indigo-200">
-                      <span className="text-xs font-bold text-indigo-200 mb-1">新建底仓 ({config.initialPositionPct}%)</span>
-                      <span className="text-2xl font-bold">¥{amountAdvice.buyAdvice}</span>
-                      <span className="text-xs opacity-70 mt-0.5">约 {amountAdvice.buyShares} 股/份</span>
-                    </button>
-                  ) : (
-                    <>
-                      <button onClick={() => handleTrade('buy')} disabled={nextActionAnalysis.actionType.includes('sell')}
-                        className={`p-4 rounded-2xl flex flex-col items-center transition-all ${nextActionAnalysis.actionType.includes('sell') ? 'bg-slate-50 opacity-40' : 'bg-emerald-50 border border-emerald-200'}`}>
-                        <span className="text-xs font-bold text-emerald-600 mb-1">建议买入</span>
-                        <span className="text-xl font-bold text-emerald-800">¥{amountAdvice.buyAdvice || amountAdvice.futureBuy.buyAdvice}</span>
-                        <span className="text-[11px] text-emerald-500 mt-0.5">{amountAdvice.buyShares > 0 ? amountAdvice.buyShares : amountAdvice.futureBuy.buyShares} 股</span>
-                      </button>
-                      <button onClick={() => handleTrade('sell')} disabled={nextActionAnalysis.actionType.includes('buy')}
-                        className={`p-4 rounded-2xl flex flex-col items-center transition-all ${nextActionAnalysis.actionType.includes('buy') ? 'bg-slate-50 opacity-40' : 'bg-red-50 border border-red-200'}`}>
-                        <span className="text-xs font-bold text-red-600 mb-1">建议卖出</span>
-                        <span className="text-xl font-bold text-red-800">¥{amountAdvice.sellAdvice || amountAdvice.futureSell.sellAdvice}</span>
-                        <span className="text-[11px] text-red-500 mt-0.5">{amountAdvice.sellShares > 0 ? amountAdvice.sellShares : amountAdvice.futureSell.sellShares} 股</span>
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* 关键点位：买卖点 */}
-              {nextActionAnalysis && nextActionAnalysis.actionType !== 'init' && (
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                  <div className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">关键价位</div>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="bg-emerald-50 rounded-xl p-2.5">
-                      <div className="text-emerald-500 mb-1 font-medium">下次买点</div>
-                      <div className="font-bold text-emerald-700 font-mono">{nextActionAnalysis.nextBuyPrice.toFixed(4)}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{nextActionAnalysis.distToBuy.toFixed(2)}%</div>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl p-2.5">
-                      <div className="text-slate-400 mb-1 font-medium">上次成交</div>
-                      <div className="font-bold text-slate-600 font-mono">{nextActionAnalysis.lastPrice?.toFixed(4) || '--'}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">基准价</div>
-                    </div>
-                    <div className="bg-red-50 rounded-xl p-2.5">
-                      <div className="text-red-500 mb-1 font-medium">下次卖点</div>
-                      <div className="font-bold text-red-700 font-mono">{nextActionAnalysis.nextSellPrice.toFixed(4)}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">+{nextActionAnalysis.distToSell.toFixed(2)}%</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 收益统计 */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                <div className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">收益统计</div>
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div className="bg-red-50 rounded-xl p-3">
-                    <div className="text-xs text-red-400 mb-1">总收益</div>
-                    <div className={`text-lg font-bold ${stats.totalReturn >= 0 ? 'text-red-500' : 'text-green-600'}`}>
-                      {stats.totalReturn >= 0 ? '+' : ''}¥{stats.totalReturn.toLocaleString(undefined,{maximumFractionDigits:0})}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <div className="text-xs text-slate-400 mb-1">可用本金</div>
-                    <div className="text-lg font-bold text-slate-700">¥{stats.remainingPrincipal.toLocaleString(undefined,{maximumFractionDigits:0})}</div>
-                  </div>
-                </div>
-                <div className="space-y-2 text-xs text-slate-500">
-                  <div className="flex justify-between"><span>已落袋盈利</span><span className="font-mono text-slate-700">{stats.realizedProfit.toFixed(2)}</span></div>
-                  <div className="flex justify-between"><span>持仓浮盈</span><span className="font-mono text-slate-700">{(stats.marketValue - stats.currentInvested).toFixed(2)}</span></div>
-                  <div className="flex justify-between"><span>持仓份额</span><span className="font-mono text-slate-700">{stats.totalShares.toFixed(0)} 份</span></div>
-                </div>
-              </div>
-
-              {/* 手动补录入口 */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
-                  <Icon name={isEditMode ? 'Edit' : 'FilePlus'} size={16} /> {isEditMode ? '编辑记录' : '手动补录'}
-                </h3>
-                {showManualForm ? (
-                  <div className="space-y-3">
-                    {!isEditMode && (
-                      <div>
-                        <label className="text-xs text-slate-400 mb-1 block">快捷识别</label>
-                        <textarea rows={2} placeholder="粘贴交易文字自动识别..."
-                          className="w-full border border-slate-200 rounded-xl p-2.5 text-xs resize-none focus:outline-none focus:border-indigo-400 bg-slate-50"
-                          onChange={e => handleQuickParse(e.target.value)} />
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-2">
-                      <input type="date" value={manualRecord.date} onChange={e => setManualRecord({...manualRecord, date: e.target.value})} className="border border-slate-200 p-2.5 rounded-xl text-sm w-full bg-slate-50" />
-                      <select value={manualRecord.type} onChange={e => setManualRecord({...manualRecord, type: e.target.value})} className="border border-slate-200 p-2.5 rounded-xl text-sm w-full bg-slate-50">
-                        <option value="buy">买入</option><option value="sell">卖出</option>
-                      </select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input type="number" placeholder="单价" value={manualRecord.price} onChange={e => setManualRecord({...manualRecord, price: e.target.value})} className="border border-slate-200 p-2.5 rounded-xl text-sm w-full bg-slate-50" />
-                      <input type="number" placeholder="份额" value={manualRecord.shares} onChange={e => setManualRecord({...manualRecord, shares: e.target.value})} className="border border-slate-200 p-2.5 rounded-xl text-sm w-full bg-slate-50" />
-                    </div>
-                    {manualRecord.price && manualRecord.shares && !isNaN(parseFloat(manualRecord.price)) && !isNaN(parseFloat(manualRecord.shares)) && (
-                      <div className="flex justify-between text-xs px-3 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
-                        <span className="text-indigo-400">预计金额</span>
-                        <span className="font-bold text-indigo-700">¥{(parseFloat(manualRecord.price)*parseFloat(manualRecord.shares)).toLocaleString(undefined,{maximumFractionDigits:2})}</span>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-2">
-                      <button onClick={handleManualSubmit} className="py-3 rounded-xl bg-indigo-600 text-white text-sm font-bold">{isEditMode ? '确认修改' : '确认添加'}</button>
-                      <button onClick={() => {setShowManualForm(false); setIsEditMode(false);}} className="py-3 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">取消</button>
-                    </div>
-                  </div>
-                ) : (
-                  <button onClick={() => {setManualRecord({date: new Date().toISOString().split('T')[0], price:'', shares:'', type:'buy', id:null}); setShowManualForm(true);}}
-                    className="w-full py-4 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 hover:border-indigo-300 hover:text-indigo-500 flex items-center justify-center gap-2 text-sm transition-all">
-                    <Icon name="PlusCircle" size={18} /> 添加一笔交易记录
-                  </button>
-                )}
-              </div>
-
-              {/* 最近交易记录 */}
-              {records.length > 0 && (
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-bold text-slate-700 text-sm">最近交易 ({records.length})</h3>
-                    <button onClick={() => {if(isClearConfirming){updateRecords([]);setIsClearConfirming(false);}else{setIsClearConfirming(true);setTimeout(()=>setIsClearConfirming(false),3000);}}}
-                      className={`text-xs px-2 py-1 rounded-lg ${isClearConfirming ? 'bg-red-600 text-white' : 'text-slate-400'}`}>
-                      <Icon name="Trash2" size={13} />
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {[...records].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5).map((r,i,arr)=>(
-                      <div key={r.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
-                        <div className="flex items-center gap-2.5">
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${r.type==='buy'?'bg-emerald-100 text-emerald-700':'bg-red-100 text-red-600'}`}>{r.type==='buy'?'买':'卖'}</span>
-                          <div>
-                            <div className="text-xs font-mono font-bold text-slate-700">{r.price.toFixed(4)}</div>
-                            <div className="text-[10px] text-slate-400">{r.date.split('T')[0]}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs font-medium text-slate-700">¥{r.amount.toLocaleString()}</div>
-                          <div className="text-[10px] text-slate-400">{r.shares.toFixed(0)}股</div>
-                        </div>
-                        <div className="flex gap-2 ml-2">
-                          <button onClick={()=>startEditRecord(r)} className="text-slate-300 hover:text-indigo-500"><Icon name="Edit" size={14}/></button>
-                          <button onClick={()=>deleteRecord(r.id)} className="text-slate-300 hover:text-red-500"><Icon name="Trash2" size={14}/></button>
-                        </div>
-                      </div>
-                    ))}
-                    {records.length > 5 && <div className="text-center text-xs text-slate-400 pt-1">还有 {records.length-5} 条，切换「看板」完整查看</div>}
-                  </div>
-                </div>
-              )}
-
-              {/* ========== 手机端：网格点位汇总 ========== */}
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Icon name="Target" size={15} className="text-indigo-500" />
-                    <span className="font-bold text-slate-700 text-sm">本标的网格计划</span>
-                  </div>
-                  {nextActionAnalysis && nextActionAnalysis.actionType !== 'init' && (
-                    <span className="text-[10px] text-slate-400 font-mono">基准 {nextActionAnalysis.lastPrice?.toFixed(4)} · {config.gridSizePct}%</span>
-                  )}
-                </div>
-                {(!nextActionAnalysis || nextActionAnalysis.actionType === 'init' || records.length === 0) ? (
-                  <div className="px-4 py-6 text-center text-xs text-slate-400">暂无交易记录，无法计算点位</div>
-                ) : (() => {
-                  const lastPrice = nextActionAnalysis.lastPrice;
-                  const totalShares = Math.max(0, Math.round(stats.totalShares));
-                  // 使用统一计算函数（与完整网格计划一致）
-                  const { sellLevels, buyLevels } = calcGridLevels(lastPrice, config, totalShares, 3);
-                  const fmt = n => n.toFixed(4);
-                  const sellRows = [[sellLevels[2],'卖3','text-red-300'],[sellLevels[1],'卖2','text-red-400'],[sellLevels[0],'卖1','text-red-600 font-bold']];
-                  const buyRows  = [[buyLevels[0],'买1','text-emerald-600 font-bold'],[buyLevels[1],'买2','text-emerald-500'],[buyLevels[2],'买3','text-emerald-400']];
-                  return (
-                    <div className="p-3 space-y-2">
-                      <div className="text-[10px] font-semibold text-red-400 uppercase tracking-wider px-1 mb-1">卖出点位</div>
-                      {sellRows.map(([lv,label,cls])=>(
-                        <div key={label} className="flex items-center justify-between px-3 py-2 bg-red-50 rounded-xl">
-                          <span className={`text-xs ${cls==='text-red-600 font-bold'?'font-bold text-red-600':'text-red-400'}`}>{label}</span>
-                          <span className={`font-mono text-sm ${cls}`}>{fmt(lv.price)}</span>
-                          <span className="text-xs text-slate-400 font-mono">{lv.shares.toLocaleString()} 股</span>
-                        </div>
-                      ))}
-                      <div className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl border border-slate-200">
-                        <span className="text-xs text-slate-500 font-medium">上次成交</span>
-                        <span className="font-mono text-sm font-bold text-slate-700">{fmt(lastPrice)}</span>
-                        <span className="text-xs text-indigo-400 font-mono">持仓 {totalShares.toLocaleString()}股</span>
-                      </div>
-                      <div className="text-[10px] font-semibold text-emerald-500 uppercase tracking-wider px-1 mt-2 mb-1">买入点位</div>
-                      {buyRows.map(([lv,label,cls])=>(
-                        <div key={label} className="flex items-center justify-between px-3 py-2 bg-emerald-50 rounded-xl">
-                          <span className={`text-xs ${cls.includes('font-bold')?'font-bold text-emerald-600':'text-emerald-400'}`}>{label}</span>
-                          <span className={`font-mono text-sm ${cls}`}>{fmt(lv.price)}</span>
-                          <span className="text-xs text-slate-400 font-mono">{lv.shares.toLocaleString()} 股</span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* ========== 手机端：导入导出 ========== */}
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-                  <Icon name="Save" size={15} className="text-indigo-500" />
-                  <span className="font-bold text-slate-700 text-sm">导入 / 导出</span>
-                </div>
-                <div className="p-3 space-y-2">
-                  {/* 批量导入（全标的）*/}
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1 mb-1">全标的批量操作</div>
-                  <button onClick={() => downloadBatchTemplate(assetManagerAssets || [])}
-                    className="w-full flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 text-left">
-                    <Icon name="Download" size={18} className="text-slate-400 flex-shrink-0" />
-                    <div>
-                      <div className="text-sm font-medium text-slate-700">下载批量导入模板</div>
-                      <div className="text-[10px] text-slate-400">含全部标的代码，填入后批量上传</div>
-                    </div>
-                  </button>
-                  <label className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left cursor-pointer ${isBatchImporting ? 'bg-indigo-50 border-indigo-100' : 'bg-indigo-50 border-indigo-200'}`}>
-                    <Icon name="Upload" size={18} className={`flex-shrink-0 ${isBatchImporting ? 'text-indigo-300 animate-spin' : 'text-indigo-500'}`} />
-                    <div>
-                      <div className="text-sm font-medium text-indigo-700">{isBatchImporting ? '正在导入...' : '一键批量导入'}</div>
-                      <div className="text-[10px] text-indigo-400">自动匹配标的，智能去重</div>
-                    </div>
-                    <input type="file" accept=".csv,.txt" className="hidden"
-                      onChange={e => { if(e.target.files[0]) handleBatchImport(e.target.files[0]); e.target.value=''; }}
-                      disabled={isBatchImporting} />
-                  </label>
-                  {/* 批量导入结果 */}
-                  {batchImportResult && (
-                    <div className="px-3 py-2.5 bg-emerald-50 rounded-xl border border-emerald-100 text-xs space-y-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-emerald-700 flex items-center gap-1"><Icon name="CheckCircle" size={12}/> 导入完成</span>
-                        <button onClick={() => setBatchImportResult(null)} className="text-slate-400"><Icon name="X" size={12}/></button>
-                      </div>
-                      {batchImportResult.matched.map((m,i) => (
-                        <div key={i} className="flex justify-between text-slate-600">
-                          <span>{m.name}</span><span className="text-emerald-600 font-medium">+{m.added}笔{m.skipped>0?` (跳过${m.skipped})`:''}</span>
-                        </div>
-                      ))}
-                      {batchImportResult.unmatched.length > 0 && (
-                        <div className="text-amber-600 pt-1 border-t border-emerald-200">未匹配：{batchImportResult.unmatched.map(u=>u.code).join(', ')}</div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 当前标的导入导出 */}
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1 mt-3 mb-1">当前标的操作</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="flex items-center justify-center gap-2 py-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer">
-                      <Icon name="Upload" size={16} className="text-slate-400" />
-                      <span className="text-sm text-slate-600 font-medium">导入</span>
-                      <input type="file" accept=".csv,.json,.txt" className="hidden" onChange={handleFileUpload} />
-                    </label>
-                    <button onClick={() => {
-                      const blob = new Blob([JSON.stringify(records, null, 2)], {type:'application/json'});
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a'); a.href = url;
-                      a.download = `GridTrader_${config.fundCode}_${new Date().toISOString().split('T')[0]}.json`;
-                      a.click();
-                    }} className="flex items-center justify-center gap-2 py-3 bg-slate-50 rounded-xl border border-slate-100">
-                      <Icon name="Download" size={16} className="text-slate-400" />
-                      <span className="text-sm text-slate-600 font-medium">导出</span>
-                    </button>
-                  </div>
-                  <button onClick={downloadCSVTemplate}
-                    className="w-full flex items-center gap-2 justify-center py-2.5 text-xs text-blue-500 border border-blue-100 bg-blue-50 rounded-xl">
-                    <Icon name="FileSpreadsheet" size={13}/> 下载单标的导入模板
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
-            {/* ========== 桌面端看板（原有布局）========== */}
-            <div className="desktop-dashboard grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* 左侧控制面板 */}
               <div className="lg:col-span-4 space-y-6 flex flex-col h-[500px]">
                 <Card className="p-5 border-indigo-100 ring-4 ring-indigo-50/50 relative overflow-hidden flex-1 flex flex-col justify-between">
@@ -1588,45 +894,21 @@
                   <h3 className="font-bold text-slate-700 mb-2 flex items-center gap-2"><Icon name={isEditMode ? "Edit" : "FilePlus"} size={18} /> {isEditMode ? "编辑记录" : "手动补录"}</h3>
                   {showManualForm ? (
                     <div className="space-y-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      {/* 快捷粘贴输入框 */}
-                      {!isEditMode && (
-                        <div>
-                          <label className="text-xs text-slate-400 mb-1 block">快捷识别（粘贴交易文字自动填充）</label>
-                          <textarea
-                            rows={2}
-                            placeholder="例如：2026-04-08 买入 1.3200 8800份 / 卖出 1.3500 2000股 2026/04/09" 
-                            className="w-full border border-slate-200 rounded p-2 text-xs resize-none focus:outline-none focus:border-indigo-400 bg-white"
-                            onChange={e => handleQuickParse(e.target.value)}
-                          />
-                        </div>
-                      )}
-                      {/* 日期 + 类型 */}
                       <div className="grid grid-cols-2 gap-2">
                         <input type="date" value={manualRecord.date} onChange={e => setManualRecord({ ...manualRecord, date: e.target.value })} className="border p-2 rounded text-sm w-full" />
-                        <select value={manualRecord.type} onChange={e => setManualRecord({ ...manualRecord, type: e.target.value })} className="border p-2 rounded text-sm w-full">
-                          <option value="buy">买入</option>
-                          <option value="sell">卖出</option>
-                        </select>
+                        <select value={manualRecord.type} onChange={e => setManualRecord({ ...manualRecord, type: e.target.value })} className="border p-2 rounded text-sm w-full"><option value="buy">买入</option><option value="sell">卖出</option></select>
                       </div>
-                      {/* 单价 + 份额 */}
                       <div className="grid grid-cols-2 gap-2">
                         <input type="number" placeholder="单价" value={manualRecord.price} onChange={e => setManualRecord({ ...manualRecord, price: e.target.value })} className="border p-2 rounded text-sm w-full" />
-                        <input type="number" placeholder="份额（股/份）" value={manualRecord.shares} onChange={e => setManualRecord({ ...manualRecord, shares: e.target.value })} className="border p-2 rounded text-sm w-full" />
+                        <input type="number" placeholder="金额" value={manualRecord.amount} onChange={e => setManualRecord({ ...manualRecord, amount: e.target.value })} className="border p-2 rounded text-sm w-full" />
                       </div>
-                      {/* 预计金额预览 */}
-                      {manualRecord.price && manualRecord.shares && !isNaN(parseFloat(manualRecord.price)) && !isNaN(parseFloat(manualRecord.shares)) && (
-                        <div className="flex justify-between items-center text-xs px-2 py-1.5 bg-white border border-slate-200 rounded">
-                          <span className="text-slate-400">预计成交金额</span>
-                          <span className="font-bold text-slate-700">¥{(parseFloat(manualRecord.price) * parseFloat(manualRecord.shares)).toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
-                        </div>
-                      )}
                       <div className="flex gap-2">
                         <Button onClick={handleManualSubmit} className="flex-1 py-1 text-xs">{isEditMode ? "确认修改" : "确认添加"}</Button>
                         <Button variant="secondary" onClick={() => { setShowManualForm(false); setIsEditMode(false); }} className="flex-1 py-1 text-xs">取消</Button>
                       </div>
                     </div>
                   ) : (
-                    <Button variant="secondary" onClick={() => { setManualRecord({ date: new Date().toISOString().split('T')[0], price: '', shares: '', type: 'buy', id: null }); setShowManualForm(true); }} className="w-full border-dashed border-2 border-slate-300 h-full min-h-[120px] hover:border-indigo-300 hover:text-indigo-600 flex flex-col gap-1">
+                    <Button variant="secondary" onClick={() => { setManualRecord({ date: new Date().toISOString().split('T')[0], price: '', amount: '', type: 'buy', id: null }); setShowManualForm(true); }} className="w-full border-dashed border-2 border-slate-300 h-full min-h-[120px] hover:border-indigo-300 hover:text-indigo-600 flex flex-col gap-1">
                       <span className="text-xl">+</span><span>添加一笔历史交易</span>
                     </Button>
                   )}
@@ -1868,7 +1150,6 @@
                 </Card>
               </div>
             </div>
-            </>
           )}
 
           {/* ===== 收益曲线 Tab ===== */}
@@ -2333,6 +1614,793 @@
     }
 
     // =============================================
+    // ETF 量能轮动模块
+    // =============================================
+
+    // 预设 ETF 池（含代码、名称、板块）
+    const PRESET_ETF_GROUPS = [
+      { group: '宽基指数', color: 'indigo', items: [
+        { code: '510300', name: '沪深300ETF' },
+        { code: '510500', name: '中证500ETF' },
+        { code: '159915', name: '创业板ETF' },
+        { code: '588000', name: '科创50ETF' },
+        { code: '510050', name: '上证50ETF' },
+        { code: '159922', name: '中证1000ETF' },
+      ]},
+      { group: '行业主题', color: 'violet', items: [
+        { code: '512010', name: '医疗ETF' },
+        { code: '512690', name: '酒ETF' },
+        { code: '512760', name: '芯片ETF' },
+        { code: '159819', name: '人工智能ETF' },
+        { code: '516160', name: '新能源车ETF' },
+        { code: '515030', name: '新能源ETF' },
+        { code: '512800', name: '银行ETF' },
+        { code: '512660', name: '军工ETF' },
+      ]},
+      { group: '红利/Smart Beta', color: 'amber', items: [
+        { code: '515880', name: '央企红利ETF' },
+        { code: '159905', name: '红利ETF' },
+        { code: '515700', name: '中证红利ETF' },
+      ]},
+    ];
+
+    // 轮动评分计算（纯计算，不依赖网络）
+    const calcRotationScore = (data, weights) => {
+      if (!data || data.length < 20) return null;
+      const prices = data.map(d => d.netValue);
+      const vols = data.map(d => d.volume || 0);
+      const n = prices.length;
+
+      // 动量：20日、60日涨幅
+      const mom20 = n >= 20 ? (prices[n-1] - prices[n-20]) / prices[n-20] * 100 : 0;
+      const mom60 = n >= 60 ? (prices[n-1] - prices[n-60]) / prices[n-60] * 100 : 0;
+      const momScore = (mom20 * 0.6 + mom60 * 0.4);
+
+      // 量能：近5日成交量 vs 近20日均量
+      const recentVol = vols.slice(-5).reduce((a,b) => a+b, 0) / 5;
+      const avgVol20 = vols.slice(-20).reduce((a,b) => a+b, 0) / 20;
+      const volRatio = avgVol20 > 0 ? recentVol / avgVol20 : 1;
+      const volScore = Math.min((volRatio - 1) * 50, 30);
+
+      // ATR波动率（近14日）
+      let atrSum = 0;
+      for (let i = Math.max(1, n-14); i < n; i++) {
+        atrSum += Math.abs(prices[i] - prices[i-1]);
+      }
+      const atr = atrSum / 14;
+      const atrPct = prices[n-1] > 0 ? atr / prices[n-1] * 100 : 0;
+      const volPenalty = -atrPct * 5;
+
+      // 量价共振：价涨量增加分，价涨量缩扣分
+      const priceUp = prices[n-1] > prices[n-6];
+      const volUp = volRatio > 1.1;
+      const resonance = priceUp && volUp ? 10 : priceUp && !volUp ? -8 : 0;
+
+      // 综合得分
+      const raw = momScore * weights.mom + volScore * weights.vol + volPenalty * weights.atr + resonance;
+      const score = Math.max(-100, Math.min(100, raw));
+
+      // 近5日各价格
+      const recent5 = prices.slice(-5);
+
+      return {
+        score: parseFloat(score.toFixed(1)),
+        mom20: parseFloat(mom20.toFixed(2)),
+        mom60: parseFloat(mom60.toFixed(2)),
+        volRatio: parseFloat(volRatio.toFixed(2)),
+        atrPct: parseFloat(atrPct.toFixed(2)),
+        resonance,
+        signal: score >= 15 ? 'strong' : score >= 5 ? 'weak' : score >= -5 ? 'neutral' : score >= -15 ? 'caution' : 'danger',
+        lastPrice: prices[n-1],
+        recent5,
+        priceUp,
+        volUp,
+      };
+    };
+
+    // 轮动回测引擎
+    const runRotationBacktest = (allData, weights, holdCount, rebalanceDays, fee) => {
+      // 找最短共同起始日
+      const allDates = allData.map(d => d.data.map(x => x.date));
+      const startDate = allDates.reduce((acc, dates) => {
+        const first = dates[0];
+        return first > acc ? first : acc;
+      }, '2000-01-01');
+
+      // 构建统一日期轴（用第一只ETF作基准）
+      const baseData = allData[0].data.filter(d => d.date >= startDate);
+      const dates = baseData.map(d => d.date);
+
+      let cash = 100000;
+      let holdings = {}; // code -> shares
+      let lastRebalance = -rebalanceDays;
+      const history = [];
+      let buyHoldValue = 100000; // 等权买入持有基准
+
+      // 初始等权买入持有
+      const bhInitPrice = {};
+      const bhShares = {};
+      const bhPerAmount = 100000 / allData.length;
+      allData.forEach(etf => {
+        const firstDay = etf.data.find(d => d.date >= startDate);
+        if (firstDay) { bhInitPrice[etf.code] = firstDay.netValue; bhShares[etf.code] = bhPerAmount / firstDay.netValue; }
+      });
+
+      for (let di = 0; di < dates.length; di++) {
+        const dateStr = dates[di];
+
+        // 计算当日各ETF价格
+        const dayPrices = {};
+        allData.forEach(etf => {
+          const dayData = etf.data.find(d => d.date === dateStr);
+          if (dayData) dayPrices[etf.code] = dayData.netValue;
+        });
+
+        // 轮动再平衡
+        if (di - lastRebalance >= rebalanceDays && di >= 20) {
+          // 计算各ETF当日评分（用截止当日的数据）
+          const scores = allData.map(etf => {
+            const sliceData = etf.data.filter(d => d.date <= dateStr);
+            const sc = calcRotationScore(sliceData, weights);
+            return { code: etf.code, name: etf.name, score: sc ? sc.score : -999, price: dayPrices[etf.code] };
+          }).filter(x => x.price).sort((a, b) => b.score - a.score);
+
+          const topETFs = scores.slice(0, holdCount);
+
+          // 计算当前持仓市值
+          let portfolioValue = cash;
+          Object.entries(holdings).forEach(([code, shares]) => {
+            if (dayPrices[code]) portfolioValue += shares * dayPrices[code];
+          });
+
+          // 卖出不在 Top 的
+          Object.entries(holdings).forEach(([code, shares]) => {
+            if (!topETFs.find(e => e.code === code) && dayPrices[code]) {
+              cash += shares * dayPrices[code] * (1 - fee);
+              delete holdings[code];
+            }
+          });
+
+          // 等权买入 Top ETFs
+          const perAmount = cash / topETFs.length;
+          topETFs.forEach(etf => {
+            if (!holdings[etf.code] && etf.price) {
+              const shares = (perAmount * (1 - fee)) / etf.price;
+              holdings[etf.code] = (holdings[etf.code] || 0) + shares;
+              cash -= perAmount;
+            }
+          });
+
+          lastRebalance = di;
+        }
+
+        // 计算当日组合总值
+        let totalValue = cash;
+        Object.entries(holdings).forEach(([code, shares]) => {
+          if (dayPrices[code]) totalValue += shares * dayPrices[code];
+        });
+
+        // 买入持有基准
+        let bhTotal = 0;
+        allData.forEach(etf => {
+          if (dayPrices[etf.code] && bhShares[etf.code]) bhTotal += bhShares[etf.code] * dayPrices[etf.code];
+        });
+
+        history.push({
+          date: dateStr,
+          value: parseFloat(totalValue.toFixed(2)),
+          roi: parseFloat(((totalValue - 100000) / 100000 * 100).toFixed(2)),
+          bhValue: parseFloat(bhTotal.toFixed(2)),
+          bhRoi: parseFloat(((bhTotal - 100000) / 100000 * 100).toFixed(2)),
+        });
+      }
+
+      const finalValue = history[history.length - 1]?.value || 100000;
+      const finalBH = history[history.length - 1]?.bhValue || 100000;
+      const maxDD = (() => {
+        let peak = 100000, maxD = 0;
+        history.forEach(h => { if (h.value > peak) peak = h.value; const d = (peak - h.value) / peak; if (d > maxD) maxD = d; });
+        return (maxD * 100).toFixed(2);
+      })();
+
+      return { history, finalValue, finalRoi: ((finalValue - 100000) / 100000 * 100).toFixed(2), bhRoi: ((finalBH - 100000) / 100000 * 100).toFixed(2), maxDD };
+    };
+
+    // ===== 轮动主面板 =====
+    function RotationDashboard({ userCode }) {
+      const [activeRotTab, setActiveRotTab] = useState('pool');
+      const [pool, setPool] = useState([]);
+      const [loadingCodes, setLoadingCodes] = useState({});
+      const [etfData, setEtfData] = useState({});
+      const [scores, setScores] = useState([]);
+      const [weights, setWeights] = useState({ mom: 0.4, vol: 0.35, atr: 0.25 });
+      const [holdCount, setHoldCount] = useState(3);
+      const [rebalanceDays, setRebalanceDays] = useState(20);
+      const [fee, setFee] = useState(0.0003);
+      const [backtestResult, setBacktestResult] = useState(null);
+      const [isBacktesting, setIsBacktesting] = useState(false);
+      const [addCode, setAddCode] = useState('');
+      const [addName, setAddName] = useState('');
+      const [heatmapPeriod, setHeatmapPeriod] = useState(20);
+      const [searchText, setSearchText] = useState('');
+
+      const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, ComposedChart, Brush } = Recharts;
+
+      // 从 Supabase 加载池子
+      useEffect(() => {
+        (async () => {
+          try {
+            const { data } = await supabase.from('rotation_pool').select('pool').eq('user_code', userCode).single();
+            if (data?.pool) setPool(data.pool);
+          } catch(e) {}
+        })();
+      }, [userCode]);
+
+      const savePool = async (newPool) => {
+        setPool(newPool);
+        try { await supabase.from('rotation_pool').upsert({ user_code: userCode, pool: newPool, updated_at: new Date().toISOString() }, { onConflict: 'user_code' }); } catch(e) {}
+      };
+
+      const addToPool = (code, name) => {
+        if (!code || pool.find(p => p.code === code)) return;
+        savePool([...pool, { code: code.trim(), name: name || code }]);
+      };
+
+      const removeFromPool = (code) => savePool(pool.filter(p => p.code !== code));
+
+      // 拉取单只ETF数据
+      const fetchETF = async (code, name) => {
+        setLoadingCodes(prev => ({ ...prev, [code]: true }));
+        try {
+          const result = await fetchStockRealData(code);
+          setEtfData(prev => ({ ...prev, [code]: { name: result.name || name, data: result.data } }));
+        } catch(e) { alert(`${name}(${code}) 数据拉取失败`); }
+        setLoadingCodes(prev => ({ ...prev, [code]: false }));
+      };
+
+      // 批量拉取所有池中ETF
+      const fetchAll = async () => {
+        for (const etf of pool) { await fetchETF(etf.code, etf.name); }
+      };
+
+      // 每次数据更新后重算评分
+      useEffect(() => {
+        const newScores = pool.map(etf => {
+          const d = etfData[etf.code];
+          if (!d) return { ...etf, score: null, signal: 'nodata' };
+          const sc = calcRotationScore(d.data, weights);
+          return { ...etf, ...sc };
+        }).filter(Boolean).sort((a, b) => (b.score ?? -999) - (a.score ?? -999));
+        setScores(newScores);
+      }, [etfData, pool, weights]);
+
+      const signalConfig = {
+        strong:  { label: '强势', color: 'text-red-600',    bg: 'bg-red-50',    border: 'border-red-200',    dot: 'bg-red-500' },
+        weak:    { label: '偏强', color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-200', dot: 'bg-orange-400' },
+        neutral: { label: '中性', color: 'text-slate-500',  bg: 'bg-slate-50',  border: 'border-slate-200',  dot: 'bg-slate-400' },
+        caution: { label: '偏弱', color: 'text-blue-500',   bg: 'bg-blue-50',   border: 'border-blue-200',   dot: 'bg-blue-400' },
+        danger:  { label: '弱势', color: 'text-emerald-600',bg: 'bg-emerald-50',border: 'border-emerald-200',dot: 'bg-emerald-500' },
+        nodata:  { label: '无数据',color: 'text-slate-400', bg: 'bg-slate-50',  border: 'border-slate-100',  dot: 'bg-slate-300' },
+      };
+
+      // 热力图数据（各ETF最近N日涨跌幅）
+      const heatmapData = useMemo(() => {
+        return pool.map(etf => {
+          const d = etfData[etf.code];
+          if (!d || d.data.length < heatmapPeriod + 1) return null;
+          const prices = d.data.slice(-heatmapPeriod - 1).map(x => x.netValue);
+          const cells = [];
+          for (let i = 1; i < prices.length; i++) {
+            cells.push(parseFloat(((prices[i] - prices[i-1]) / prices[i-1] * 100).toFixed(2)));
+          }
+          const total = parseFloat(((prices[prices.length-1] - prices[0]) / prices[0] * 100).toFixed(2));
+          return { code: etf.code, name: etfData[etf.code]?.name || etf.name, cells, total };
+        }).filter(Boolean);
+      }, [pool, etfData, heatmapPeriod]);
+
+      const heatColor = (val) => {
+        if (val >= 3) return { bg: '#dc2626', text: 'white' };
+        if (val >= 1.5) return { bg: '#f87171', text: 'white' };
+        if (val >= 0.5) return { bg: '#fca5a5', text: '#7f1d1d' };
+        if (val >= 0) return { bg: '#fee2e2', text: '#991b1b' };
+        if (val >= -0.5) return { bg: '#dcfce7', text: '#166534' };
+        if (val >= -1.5) return { bg: '#86efac', text: '#14532d' };
+        if (val >= -3) return { bg: '#22c55e', text: 'white' };
+        return { bg: '#15803d', text: 'white' };
+      };
+
+      const doBacktest = () => {
+        const readyETFs = pool.map(etf => ({ ...etf, data: etfData[etf.code]?.data || [] })).filter(e => e.data.length >= 60);
+        if (readyETFs.length < 2) { alert('请先拉取至少2只ETF的数据（数据量≥60日）'); return; }
+        setIsBacktesting(true);
+        setTimeout(() => {
+          const result = runRotationBacktest(readyETFs, weights, holdCount, rebalanceDays, fee);
+          setBacktestResult(result);
+          setIsBacktesting(false);
+          setActiveRotTab('backtest');
+        }, 200);
+      };
+
+      const filteredPreset = PRESET_ETF_GROUPS.map(g => ({
+        ...g,
+        items: g.items.filter(item => !searchText || item.name.includes(searchText) || item.code.includes(searchText))
+      })).filter(g => g.items.length > 0);
+
+      return (
+        <div>
+          {/* 轮动子导航 */}
+          <nav className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg mb-6 flex-wrap">
+            {[
+              { id: 'pool', label: 'ETF池管理', icon: 'Grid' },
+              { id: 'signal', label: '轮动评分', icon: 'Signal' },
+              { id: 'heatmap', label: '量价热力图', icon: 'Layers' },
+              { id: 'backtest', label: '轮动回测', icon: 'Calculator' },
+            ].map(tab => (
+              <button key={tab.id} onClick={() => setActiveRotTab(tab.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${activeRotTab === tab.id ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                <Icon name={tab.icon} size={15} /><span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            ))}
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-xs text-slate-400">{pool.length} 只ETF</span>
+              <Button onClick={fetchAll} disabled={pool.length === 0} variant="secondary" className="text-xs py-1 px-2">
+                <Icon name="RefreshCw" size={13} /> 全部更新数据
+              </Button>
+            </div>
+          </nav>
+
+          {/* ===== ETF池管理 Tab ===== */}
+          {activeRotTab === 'pool' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* 左：预设池 */}
+              <div className="lg:col-span-7 space-y-4">
+                <Card className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2"><Icon name="Star" size={16} className="text-amber-400" /> 预设 ETF 池</h3>
+                    <div className="relative">
+                      <Icon name="Search" size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                      <input value={searchText} onChange={e => setSearchText(e.target.value)} placeholder="搜索名称/代码" className="pl-7 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-violet-400 w-36" />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {filteredPreset.map(group => (
+                      <div key={group.group}>
+                        <div className={`text-xs font-bold mb-2 text-${group.color}-600 bg-${group.color}-50 px-2 py-1 rounded`}>{group.group}</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {group.items.map(item => {
+                            const inPool = pool.find(p => p.code === item.code);
+                            return (
+                              <button key={item.code} onClick={() => inPool ? removeFromPool(item.code) : addToPool(item.code, item.name)}
+                                className={`flex items-center justify-between px-3 py-2 rounded-lg border text-left transition-all text-xs ${inPool ? 'bg-violet-50 border-violet-300 text-violet-700' : 'bg-white border-slate-200 text-slate-600 hover:border-violet-300'}`}>
+                                <div>
+                                  <div className="font-bold">{item.name}</div>
+                                  <div className="text-[10px] opacity-60 font-mono">{item.code}</div>
+                                </div>
+                                <Icon name={inPool ? 'MinusCircle' : 'PlusCircle'} size={16} className={inPool ? 'text-violet-400' : 'text-slate-300'} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+
+              {/* 右：自选池 + 手动添加 */}
+              <div className="lg:col-span-5 space-y-4">
+                <Card className="p-5">
+                  <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Icon name="Layers" size={16} className="text-violet-500" /> 我的轮动池 ({pool.length})</h3>
+                  {pool.length === 0 ? (
+                    <div className="text-center py-12 text-slate-300 text-sm border-2 border-dashed border-slate-200 rounded-xl">
+                      <Icon name="Grid" size={36} className="mx-auto mb-2 opacity-40" />
+                      <p>从左侧选择 ETF 加入轮动池</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {pool.map(etf => {
+                        const d = etfData[etf.code];
+                        const sc = scores.find(s => s.code === etf.code);
+                        const sig = sc?.signal || 'nodata';
+                        const cfg = signalConfig[sig];
+                        return (
+                          <div key={etf.code} className={`flex items-center justify-between p-3 rounded-xl border ${cfg.border} ${cfg.bg} transition-all`}>
+                            <div className="flex items-center gap-3">
+                              <span className={`w-2 h-2 rounded-full ${cfg.dot} flex-shrink-0`}></span>
+                              <div>
+                                <div className="font-bold text-slate-800 text-sm">{etfData[etf.code]?.name || etf.name}</div>
+                                <div className="text-[10px] font-mono text-slate-400">{etf.code}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {sc?.score != null && <span className={`text-xs font-bold ${cfg.color}`}>{sc.score > 0 ? '+' : ''}{sc.score}</span>}
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${cfg.color} ${cfg.bg}`}>{cfg.label}</span>
+                              <button onClick={() => fetchETF(etf.code, etf.name)} disabled={loadingCodes[etf.code]} className="text-slate-400 hover:text-violet-600 p-1">
+                                <Icon name="RefreshCw" size={13} className={loadingCodes[etf.code] ? 'animate-spin' : ''} />
+                              </button>
+                              <button onClick={() => removeFromPool(etf.code)} className="text-slate-300 hover:text-red-500 p-1"><Icon name="X" size={13} /></button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Card>
+
+                {/* 手动添加 */}
+                <Card className="p-4">
+                  <h3 className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2"><Icon name="PlusCircle" size={14} className="text-violet-400" /> 手动添加 ETF</h3>
+                  <div className="flex gap-2">
+                    <input value={addCode} onChange={e => setAddCode(e.target.value)} placeholder="ETF代码 如159915" className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-400" />
+                    <input value={addName} onChange={e => setAddName(e.target.value)} placeholder="名称(选填)" className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-400" />
+                    <Button onClick={() => { addToPool(addCode, addName || addCode); setAddCode(''); setAddName(''); }} disabled={!addCode} className="px-3">
+                      <Icon name="PlusCircle" size={16} />
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* ===== 轮动评分 Tab ===== */}
+          {activeRotTab === 'signal' && (
+            <div className="space-y-6">
+              {/* 权重设置 */}
+              <Card className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2"><Icon name="Settings" size={16} className="text-violet-500" /> 评分权重设置</h3>
+                  <div className="text-xs text-slate-400">总权重 = {((weights.mom + weights.vol + weights.atr) * 100).toFixed(0)}%</div>
+                </div>
+                <div className="grid grid-cols-3 gap-6">
+                  {[
+                    { key: 'mom', label: '价格动量', desc: '20/60日涨幅', color: 'violet' },
+                    { key: 'vol', label: '量能强度', desc: '价量共振', color: 'blue' },
+                    { key: 'atr', label: '波动惩罚', desc: 'ATR越大扣分', color: 'amber' },
+                  ].map(item => (
+                    <div key={item.key}>
+                      <div className={`flex justify-between text-xs mb-1`}>
+                        <span className="font-medium text-slate-700">{item.label}</span>
+                        <span className={`font-bold text-${item.color}-600`}>{(weights[item.key] * 100).toFixed(0)}%</span>
+                      </div>
+                      <input type="range" min="0" max="100" step="5" value={weights[item.key] * 100}
+                        onChange={e => setWeights(prev => ({ ...prev, [item.key]: parseInt(e.target.value) / 100 }))}
+                        className="w-full" />
+                      <div className="text-[10px] text-slate-400 mt-0.5">{item.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* 评分排行榜 */}
+              {scores.length === 0 ? (
+                <Card className="p-12 text-center text-slate-400">
+                  <Icon name="Signal" size={40} className="mx-auto mb-3 opacity-30" />
+                  <p className="mb-3">请先在 ETF池管理 中添加标的并更新数据</p>
+                  <Button variant="secondary" onClick={() => setActiveRotTab('pool')}>前往添加</Button>
+                </Card>
+              ) : (
+                <>
+                  {/* Top 强势 + 建议换仓 */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {scores.slice(0, 3).map((etf, idx) => {
+                      const cfg = signalConfig[etf.signal || 'nodata'];
+                      return (
+                        <Card key={etf.code} className={`p-5 border-2 ${idx === 0 ? 'border-violet-300 bg-violet-50/30' : 'border-slate-100'}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="text-xs text-slate-400 mb-1">#{idx + 1} {idx === 0 ? '🔥 最强势' : idx === 1 ? '强势' : '偏强'}</div>
+                              <div className="font-bold text-slate-800">{etfData[etf.code]?.name || etf.name}</div>
+                              <div className="text-[10px] text-slate-400 font-mono">{etf.code}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`text-2xl font-bold ${cfg.color}`}>{etf.score > 0 ? '+' : ''}{etf.score ?? '--'}</div>
+                              <div className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</div>
+                            </div>
+                          </div>
+                          {etf.score != null && (
+                            <div className="grid grid-cols-2 gap-2 text-xs mt-3 pt-3 border-t border-slate-100">
+                              <div><span className="text-slate-400">20日</span> <span className={`font-bold ${etf.mom20 >= 0 ? 'text-red-500' : 'text-green-600'}`}>{etf.mom20 > 0 ? '+' : ''}{etf.mom20}%</span></div>
+                              <div><span className="text-slate-400">60日</span> <span className={`font-bold ${etf.mom60 >= 0 ? 'text-red-500' : 'text-green-600'}`}>{etf.mom60 > 0 ? '+' : ''}{etf.mom60}%</span></div>
+                              <div><span className="text-slate-400">量比</span> <span className={`font-bold ${etf.volRatio > 1 ? 'text-red-500' : 'text-slate-600'}`}>{etf.volRatio}x</span></div>
+                              <div><span className="text-slate-400">波动</span> <span className="font-bold text-slate-600">{etf.atrPct}%</span></div>
+                            </div>
+                          )}
+                          {etf.resonance > 0 && <div className="mt-2 text-[10px] px-2 py-1 bg-red-50 text-red-600 rounded font-bold">⚡ 量价共振！价涨量增</div>}
+                          {etf.resonance < 0 && <div className="mt-2 text-[10px] px-2 py-1 bg-amber-50 text-amber-600 rounded">⚠ 价涨量缩，注意分歧</div>}
+                        </Card>
+                      );
+                    })}
+                  </div>
+
+                  {/* 全部评分表格 */}
+                  <Card className="overflow-hidden">
+                    <div className="p-4 border-b bg-slate-50 flex justify-between items-center">
+                      <span className="font-bold text-slate-700">全部 ETF 轮动评分排名</span>
+                      <span className="text-xs text-slate-400">数据越新越准，建议每日开盘后更新</span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-slate-50 text-slate-500 text-xs">
+                          <tr>
+                            <th className="px-4 py-3 text-left">排名</th>
+                            <th className="px-4 py-3 text-left">ETF</th>
+                            <th className="px-4 py-3 text-center">信号</th>
+                            <th className="px-4 py-3 text-right">综合分</th>
+                            <th className="px-4 py-3 text-right">20日涨幅</th>
+                            <th className="px-4 py-3 text-right">60日涨幅</th>
+                            <th className="px-4 py-3 text-right">量比</th>
+                            <th className="px-4 py-3 text-right">波动率</th>
+                            <th className="px-4 py-3 text-center">量价</th>
+                            <th className="px-4 py-3 text-right">现价</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {scores.map((etf, idx) => {
+                            const cfg = signalConfig[etf.signal || 'nodata'];
+                            return (
+                              <tr key={etf.code} className={`hover:bg-slate-50 ${idx < holdCount ? 'bg-violet-50/30' : ''}`}>
+                                <td className="px-4 py-3 text-slate-400 font-mono">
+                                  #{idx + 1}
+                                  {idx < holdCount && <span className="ml-1 text-[10px] bg-violet-100 text-violet-600 px-1 rounded">持仓</span>}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="font-medium text-slate-800">{etfData[etf.code]?.name || etf.name}</div>
+                                  <div className="text-[10px] font-mono text-slate-400">{etf.code}</div>
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${cfg.color} ${cfg.bg}`}>{cfg.label}</span>
+                                </td>
+                                <td className={`px-4 py-3 text-right font-bold text-base ${cfg.color}`}>
+                                  {etf.score != null ? (etf.score > 0 ? '+' : '') + etf.score : '—'}
+                                </td>
+                                <td className={`px-4 py-3 text-right text-xs font-mono ${etf.mom20 >= 0 ? 'text-red-500' : 'text-green-600'}`}>
+                                  {etf.mom20 != null ? (etf.mom20 > 0 ? '+' : '') + etf.mom20 + '%' : '—'}
+                                </td>
+                                <td className={`px-4 py-3 text-right text-xs font-mono ${etf.mom60 >= 0 ? 'text-red-500' : 'text-green-600'}`}>
+                                  {etf.mom60 != null ? (etf.mom60 > 0 ? '+' : '') + etf.mom60 + '%' : '—'}
+                                </td>
+                                <td className={`px-4 py-3 text-right text-xs font-mono ${etf.volRatio > 1.2 ? 'text-red-500' : etf.volRatio < 0.8 ? 'text-green-600' : 'text-slate-500'}`}>
+                                  {etf.volRatio != null ? etf.volRatio + 'x' : '—'}
+                                </td>
+                                <td className="px-4 py-3 text-right text-xs font-mono text-slate-500">
+                                  {etf.atrPct != null ? etf.atrPct + '%' : '—'}
+                                </td>
+                                <td className="px-4 py-3 text-center text-sm">
+                                  {etf.resonance > 0 ? <span title="价涨量增">⚡</span> : etf.resonance < 0 ? <span title="价涨量缩" className="opacity-50">⚠</span> : <span className="text-slate-200">—</span>}
+                                </td>
+                                <td className="px-4 py-3 text-right font-mono text-slate-700">
+                                  {etf.lastPrice != null ? etf.lastPrice.toFixed(3) : '—'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+
+                  {/* 换仓建议 */}
+                  <Card className="p-5 border-violet-200 bg-violet-50/20">
+                    <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2"><Icon name="Repeat" size={16} className="text-violet-500" /> 当前轮动建议（持仓 {holdCount} 只）</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {scores.slice(0, holdCount).map((etf, idx) => {
+                        const pct = (100 / holdCount).toFixed(1);
+                        return (
+                          <div key={etf.code} className="bg-white rounded-xl border border-violet-100 p-4">
+                            <div className="text-xs text-violet-400 mb-1">建议仓位 {pct}%</div>
+                            <div className="font-bold text-slate-800">{etfData[etf.code]?.name || etf.name}</div>
+                            <div className="text-[10px] font-mono text-slate-400 mb-2">{etf.code}</div>
+                            <div className="h-1.5 bg-slate-100 rounded-full"><div className="h-full bg-violet-400 rounded-full" style={{width: pct + '%'}}></div></div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-slate-400 mt-3">💡 建议每 {rebalanceDays} 交易日检查一次，当排名变化超过2位时考虑换仓。含手续费成本约 {(fee * 10000).toFixed(1)} 个基点/次。</p>
+                  </Card>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ===== 热力图 Tab ===== */}
+          {activeRotTab === 'heatmap' && (
+            <div className="space-y-6">
+              <Card className="p-5">
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2"><Icon name="Layers" size={16} className="text-violet-500" /> 量价热力图</h3>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-slate-500">展示天数</span>
+                    {[10, 20, 30, 60].map(d => (
+                      <button key={d} onClick={() => setHeatmapPeriod(d)} className={`px-2 py-1 rounded border transition-all ${heatmapPeriod === d ? 'bg-violet-600 text-white border-violet-600' : 'border-slate-200 text-slate-600 hover:border-violet-300'}`}>{d}日</button>
+                    ))}
+                  </div>
+                </div>
+
+                {heatmapData.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    <p>请先拉取 ETF 数据</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[600px]">
+                      {/* 图例 */}
+                      <div className="flex items-center gap-2 mb-4 text-xs text-slate-500">
+                        <span>涨幅色阶：</span>
+                        {[{v:'>3%',bg:'#dc2626',c:'white'},{v:'1.5~3%',bg:'#f87171',c:'white'},{v:'0~1.5%',bg:'#fca5a5',c:'#7f1d1d'},{v:'-1.5~0%',bg:'#86efac',c:'#14532d'},{v:'<-3%',bg:'#15803d',c:'white'}].map(x => (
+                          <span key={x.v} style={{background:x.bg,color:x.c}} className="px-2 py-0.5 rounded text-[10px] font-medium">{x.v}</span>
+                        ))}
+                      </div>
+                      {heatmapData.map(row => (
+                        <div key={row.code} className="flex items-center gap-1 mb-1.5">
+                          <div className="w-28 flex-shrink-0 text-xs text-right pr-3">
+                            <div className="font-medium text-slate-700 truncate">{row.name}</div>
+                            <div className="text-[9px] font-mono text-slate-400">{row.code}</div>
+                          </div>
+                          <div className="flex gap-0.5 flex-1">
+                            {row.cells.map((val, i) => {
+                              const c = heatColor(val);
+                              return (
+                                <div key={i} title={`${val > 0 ? '+' : ''}${val}%`}
+                                  style={{ background: c.bg, color: c.text, minWidth: 0 }}
+                                  className="flex-1 h-8 rounded-sm flex items-center justify-center text-[9px] font-mono cursor-default select-none">
+                                  {Math.abs(val) >= 1 ? (val > 0 ? '+' : '') + val.toFixed(1) : ''}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div style={heatColor(row.total)} className="w-16 flex-shrink-0 text-center text-xs font-bold rounded px-1 py-1 ml-1">
+                            {row.total > 0 ? '+' : ''}{row.total}%
+                          </div>
+                        </div>
+                      ))}
+                      <div className="flex items-center gap-1 mt-2">
+                        <div className="w-28"></div>
+                        <div className="flex gap-0.5 flex-1 text-[9px] text-slate-300 text-center">
+                          {Array.from({length: Math.min(heatmapPeriod, heatmapData[0]?.cells.length || 0)}).map((_,i) => (
+                            <div key={i} className="flex-1">{i % 5 === 4 ? `T-${heatmapPeriod - i}` : ''}</div>
+                          ))}
+                        </div>
+                        <div className="w-16 flex-shrink-0 text-center text-[9px] text-slate-400 ml-1">合计</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              {/* 量价背离预警 */}
+              {scores.filter(s => s.resonance < 0 && s.score != null).length > 0 && (
+                <Card className="p-5 border-amber-200 bg-amber-50/30">
+                  <h3 className="font-bold text-amber-700 mb-3 flex items-center gap-2"><Icon name="AlertTriangle" size={16} /> 量价背离预警</h3>
+                  <div className="space-y-2">
+                    {scores.filter(s => s.resonance < 0).map(etf => (
+                      <div key={etf.code} className="flex items-center gap-3 text-sm bg-white rounded-lg border border-amber-100 p-3">
+                        <Icon name="AlertTriangle" size={14} className="text-amber-500 flex-shrink-0" />
+                        <span className="font-medium text-slate-800">{etfData[etf.code]?.name || etf.name}</span>
+                        <span className="text-xs text-amber-600">价格上涨但成交量萎缩（量比 {etf.volRatio}x），上涨持续性存疑</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* ===== 轮动回测 Tab ===== */}
+          {activeRotTab === 'backtest' && (
+            <div className="space-y-6">
+              {/* 参数设置 */}
+              <Card className="p-5">
+                <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Icon name="Calculator" size={16} className="text-violet-500" /> 轮动回测参数</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">持仓只数</label>
+                    <select value={holdCount} onChange={e => setHoldCount(parseInt(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-400">
+                      {[1,2,3,4,5].map(n => <option key={n} value={n}>Top {n} 只</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">调仓周期（交易日）</label>
+                    <select value={rebalanceDays} onChange={e => setRebalanceDays(parseInt(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-400">
+                      <option value={5}>每周 (5日)</option>
+                      <option value={10}>双周 (10日)</option>
+                      <option value={20}>每月 (20日)</option>
+                      <option value={60}>每季 (60日)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">手续费率（单边）</label>
+                    <select value={fee} onChange={e => setFee(parseFloat(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-400">
+                      <option value={0.0003}>万三 (0.03%)</option>
+                      <option value={0.0005}>万五 (0.05%)</option>
+                      <option value={0.001}>千一 (0.1%)</option>
+                    </select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button onClick={doBacktest} disabled={isBacktesting} className="w-full bg-violet-600 hover:bg-violet-700 text-white">
+                      {isBacktesting ? <><Icon name="RefreshCw" size={14} className="animate-spin" /> 回测中...</> : <><Icon name="Calculator" size={14} /> 开始回测</>}
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400">💡 回测基准为本金10万元，等权配置 ETF池 中所有标的（买入持有），轮动策略每隔指定天数对评分 Top N 做等权再平衡</p>
+              </Card>
+
+              {backtestResult ? (
+                <>
+                  {/* 结果卡片 */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                      { label: '轮动策略收益率', value: `${parseFloat(backtestResult.finalRoi) >= 0 ? '+' : ''}${backtestResult.finalRoi}%`, color: parseFloat(backtestResult.finalRoi) >= 0 ? 'text-red-500' : 'text-green-600', bg: 'bg-red-50' },
+                      { label: '买入持有基准', value: `${parseFloat(backtestResult.bhRoi) >= 0 ? '+' : ''}${backtestResult.bhRoi}%`, color: 'text-slate-700', bg: 'bg-slate-50' },
+                      { label: '超额收益', value: `${(parseFloat(backtestResult.finalRoi) - parseFloat(backtestResult.bhRoi)).toFixed(2)}%`, color: parseFloat(backtestResult.finalRoi) - parseFloat(backtestResult.bhRoi) >= 0 ? 'text-violet-600' : 'text-red-500', bg: 'bg-violet-50' },
+                      { label: '最大回撤', value: `-${backtestResult.maxDD}%`, color: 'text-amber-600', bg: 'bg-amber-50' },
+                    ].map((item, i) => (
+                      <Card key={i} className={`p-4 ${item.bg} border-0`}>
+                        <div className="text-xs text-slate-500 mb-1">{item.label}</div>
+                        <div className={`text-2xl font-bold ${item.color}`}>{item.value}</div>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* 净值曲线对比 */}
+                  <Card className="p-5">
+                    <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Icon name="TrendingUp" size={16} className="text-violet-500" /> 轮动策略 vs 等权持有 净值曲线</h3>
+                    <div style={{height: 320}}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={backtestResult.history} margin={{top:10,right:20,bottom:10,left:10}}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="date" tick={{fontSize:10,fill:'#94a3b8'}} tickLine={false} axisLine={false} minTickGap={60} />
+                          <YAxis orientation="right" tick={{fontSize:10,fill:'#94a3b8'}} tickLine={false} axisLine={false} tickFormatter={v => `¥${(v/1000).toFixed(0)}k`} />
+                          <Tooltip formatter={(val, name) => [`¥${Number(val).toLocaleString(undefined,{maximumFractionDigits:0})}`, name]} labelStyle={{fontWeight:'bold'}} />
+                          <ReferenceLine y={100000} stroke="#94a3b8" strokeDasharray="3 3" />
+                          <Area type="monotone" dataKey="value" name="轮动策略" stroke="#7c3aed" fill="url(#rotGrad)" strokeWidth={2} dot={false} />
+                          <Area type="monotone" dataKey="bhValue" name="等权持有" stroke="#94a3b8" fill="url(#bhGrad)" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                          <defs>
+                            <linearGradient id="rotGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#7c3aed" stopOpacity={0.15}/><stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/></linearGradient>
+                            <linearGradient id="bhGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#94a3b8" stopOpacity={0.08}/><stop offset="95%" stopColor="#94a3b8" stopOpacity={0}/></linearGradient>
+                          </defs>
+                          <Brush dataKey="date" height={24} stroke="#e2e8f0" tickFormatter={() => ''} />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex gap-4 text-xs text-slate-500 mt-2 justify-center">
+                      <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-violet-600 inline-block"></span>轮动策略（Top{holdCount}，每{rebalanceDays}日调仓）</span>
+                      <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-slate-400 inline-block border-dashed border-t"></span>等权买入持有（全部ETF）</span>
+                    </div>
+                  </Card>
+
+                  {/* 收益率对比曲线 */}
+                  <Card className="p-5">
+                    <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Icon name="Activity" size={16} className="text-violet-500" /> 累计收益率对比 (%)</h3>
+                    <div style={{height: 240}}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={backtestResult.history} margin={{top:10,right:20,bottom:10,left:10}}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="date" tick={{fontSize:10,fill:'#94a3b8'}} tickLine={false} axisLine={false} minTickGap={60} />
+                          <YAxis orientation="right" tick={{fontSize:10,fill:'#94a3b8'}} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
+                          <Tooltip formatter={(val, name) => [`${val}%`, name]} labelStyle={{fontWeight:'bold'}} />
+                          <ReferenceLine y={0} stroke="#94a3b8" />
+                          <Line type="monotone" dataKey="roi" name="轮动策略" stroke="#7c3aed" strokeWidth={2} dot={false} />
+                          <Line type="monotone" dataKey="bhRoi" name="等权持有" stroke="#94a3b8" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                          <Brush dataKey="date" height={24} stroke="#e2e8f0" tickFormatter={() => ''} />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+                </>
+              ) : (
+                <Card className="p-16 text-center text-slate-400">
+                  <Icon name="Calculator" size={48} className="mx-auto mb-4 opacity-20" />
+                  <p className="mb-2">点击「开始回测」查看轮动策略历史表现</p>
+                  <p className="text-xs text-slate-300">需要先拉取 ETF 数据（至少2只，至少60日历史）</p>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // =============================================
     // 主应用（资产管理器）
     // =============================================
     function GridTraderApp() {
@@ -2341,16 +2409,6 @@
       const [showAddModal, setShowAddModal] = useState(false);
       const [newAssetForm, setNewAssetForm] = useState({ name: '', code: '', type: 'fund' });
       const [syncStatus, setSyncStatus] = useState('ok');
-      const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
-
-      useEffect(() => {
-        if (darkMode) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-        localStorage.setItem('darkMode', darkMode);
-      }, [darkMode]);
 
       const handleLogin = (code, manager) => { setUserCode(code); setAssetManagerState(manager); };
 
@@ -2391,38 +2449,7 @@
 
       const [showOverview, setShowOverview] = useState(false);
       const [overviewData, setOverviewData] = useState({});
-      const [overviewSortBy, setOverviewSortBy] = useState('name');
-      const [batchImportResult, setBatchImportResult] = useState(null); // { matched, unmatched }
-      const [isBatchImporting, setIsBatchImporting] = useState(false);
-
-      // 批量导入处理
-      const handleBatchImport = async (file) => {
-        if (!file) return;
-        setIsBatchImporting(true);
-        const text = await file.text();
-        const byCode = parseBatchCSV(text);
-        if (Object.keys(byCode).length === 0) {
-          alert('未解析到有效记录，请检查文件格式（需包含6列：代码,名称,日期,类型,单价,份额）');
-          setIsBatchImporting(false); return;
-        }
-        const matched = [], unmatched = [];
-        for (const [code, newRecs] of Object.entries(byCode)) {
-          const asset = assetManager.assets.find(a => a.code === code || a.code === String(code));
-          if (!asset) { unmatched.push({ code, count: newRecs.length }); continue; }
-          try {
-            const existing = await db.getRecords(userCode, asset.id) || [];
-            const existingIds = new Set(existing.map(r => r.date + '_' + r.price + '_' + r.shares));
-            const toAdd = newRecs.filter(r => !existingIds.has(r.date.split('T')[0] + '_' + r.price + '_' + r.shares));
-            const merged = [...toAdd, ...existing];
-            await db.setRecords(userCode, asset.id, merged);
-            matched.push({ name: asset.name, code, added: toAdd.length, skipped: newRecs.length - toAdd.length });
-          } catch(e) { unmatched.push({ code, count: newRecs.length, error: e.message }); }
-        }
-        setBatchImportResult({ matched, unmatched });
-        setIsBatchImporting(false);
-        // 刷新总览数据
-        await loadOverviewData();
-      };
+      const [showRotation, setShowRotation] = useState(false);
 
       const loadOverviewData = async () => {
         setShowOverview(true);
@@ -2443,28 +2470,43 @@
       if (!activeAsset) return <div className="flex items-center justify-center h-screen"><Icon name="RefreshCw" size={24} className="animate-spin" /></div>;
 
       return (
-        <div className="h-screen bg-slate-50 text-slate-800 font-sans flex flex-col overflow-hidden">
-
-          {/* ===== 顶部 Header ===== */}
-          <header className="bg-white border-b border-slate-200 z-20 shadow-sm flex-shrink-0">
-            <div className="px-4 h-14 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200">G</div>
-                <h1 className="text-base font-bold text-slate-800 leading-tight">网格大师 Pro <span className="text-xs font-normal text-slate-400">v3.2.0</span></h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Icon name="Cloud" size={13} className={syncStatus === 'err' ? 'text-red-400' : syncStatus === 'syncing' ? 'text-amber-400' : 'text-emerald-500'} />
-                  <span className="hidden sm:inline">{syncStatus === 'syncing' ? '同步中' : syncStatus === 'err' ? '同步失败' : '已同步'}</span>
+        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
+          <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+            <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200">G</div>
+                  <h1 className="text-lg font-bold text-slate-800 leading-tight hidden sm:block">网格大师 Pro <span className="text-xs font-normal text-slate-400">v3.2.0 云同步</span></h1>
                 </div>
-                <button onClick={() => setDarkMode(d => !d)}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 transition-colors"
-                  title={darkMode ? '切换白天模式' : '切换夜间模式'}>
-                  {darkMode
-                    ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                    : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                  }
+
+                {/* 资产切换器 */}
+                <div className="flex items-center gap-2 ml-4 overflow-x-auto max-w-[200px] sm:max-w-md">
+                  {assetManager.assets.map(asset => (
+                    <div key={asset.id} onClick={() => setAssetManager(p => ({ ...p, activeId: asset.id }))}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs cursor-pointer border transition-all whitespace-nowrap group ${asset.id === assetManager.activeId ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'}`}>
+                      <Icon name={asset.type === 'stock' ? 'Activity' : 'PieChart'} size={12} />
+                      {asset.name}
+                      {assetManager.assets.length > 1 && <span onClick={(e) => handleDeleteAsset(e, asset.id)} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 px-1"><Icon name="X" size={12} /></span>}
+                    </div>
+                  ))}
+                  <button onClick={() => setShowAddModal(true)} className="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors" title="添加新资产"><Icon name="PlusCircle" size={16} /></button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button onClick={() => setShowRotation(r => !r)}
+                  className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors font-medium ${showRotation ? 'bg-violet-600 text-white border-violet-600 shadow-sm shadow-violet-200' : 'text-violet-600 hover:bg-violet-50 border-violet-200'}`}>
+                  <Icon name="Repeat" size={14} /> {showRotation ? '退出轮动' : '量能轮动'}
                 </button>
+                {assetManager.assets.length > 1 && !showRotation && (
+                  <button onClick={loadOverviewData} className="text-xs text-indigo-600 hover:bg-indigo-50 flex items-center gap-1 px-3 py-1.5 rounded-lg border border-indigo-200 transition-colors font-medium">
+                    <Icon name="PieChart" size={14} /> 总览
+                  </button>
+                )}
+                <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                  <Icon name="Cloud" size={14} className={syncStatus === 'err' ? 'text-red-400' : syncStatus === 'syncing' ? 'text-amber-400' : 'text-emerald-500'} />
+                  <span className="hidden sm:inline">{syncStatus === 'syncing' ? '同步中' : syncStatus === 'err' ? '同步失败' : '云端已同步'}</span>
+                </div>
                 <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 transition-colors">
                   <Icon name="LogOut" size={14} /> 退出
                 </button>
@@ -2472,438 +2514,110 @@
             </div>
           </header>
 
-          {/* ===== 手机端：顶部资产横向滚动选择条 ===== */}
-          <div className="mobile-asset-bar flex-shrink-0">
-            {assetManager.assets.map(asset => {
-              const isActive = asset.id === assetManager.activeId;
-              return (
-                <button key={asset.id}
-                  onClick={() => setAssetManager(p => ({ ...p, activeId: asset.id }))}
-                  style={{whiteSpace:'nowrap', flexShrink:0}}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                    isActive
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                      : 'bg-white text-slate-600 border-slate-200'
-                  }`}>
-                  <Icon name={asset.type === 'stock' ? 'Activity' : 'PieChart'} size={11} />
-                  {asset.name}
-                </button>
-              );
-            })}
-            <button onClick={() => setShowAddModal(true)}
-              style={{whiteSpace:'nowrap', flexShrink:0}}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs text-slate-400 border border-dashed border-slate-300">
-              <Icon name="PlusCircle" size={11} /> 添加
-            </button>
-          </div>
-
-          {/* ===== 主体区域：左侧边栏(桌面) + 右侧内容 ===== */}
-          <div className="flex flex-1 overflow-hidden">
-
-            {/* 左侧固定侧边栏（仅桌面显示）*/}
-            <aside className="w-52 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col" style={{height:'100%'}}>
-              <div className="px-4 py-3 border-b border-slate-100">
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">我的资产</div>
+          <main className="max-w-6xl mx-auto px-4 py-8">
+            {showRotation ? (
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-violet-200">
+                    <Icon name="Repeat" size={16} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-800">ETF 量能轮动</h2>
+                    <p className="text-xs text-slate-400">基于价格动量 + 成交量能 + 波动率的综合评分轮动策略</p>
+                  </div>
+                </div>
+                <RotationDashboard userCode={userCode} />
               </div>
-              <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-                {assetManager.assets.map(asset => {
-                  const isActive = asset.id === assetManager.activeId;
-                  return (
-                    <div key={asset.id}
-                      onClick={() => setAssetManager(p => ({ ...p, activeId: asset.id }))}
-                      className={`group flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all relative ${
-                        isActive ? 'bg-indigo-50 border border-indigo-200 text-indigo-700' : 'border border-transparent text-slate-600 hover:bg-slate-50'
-                      }`}>
-                      {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 rounded-r-full"></div>}
-                      <Icon name={asset.type === 'stock' ? 'Activity' : 'PieChart'} size={14} className={isActive ? 'text-indigo-500' : 'text-slate-400'} />
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-xs font-medium truncate ${isActive ? 'text-indigo-700' : 'text-slate-700'}`}>{asset.name}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">{asset.code}</div>
-                      </div>
-                      {assetManager.assets.length > 1 && (
-                        <span onClick={(e) => handleDeleteAsset(e, asset.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all flex-shrink-0">
-                          <Icon name="X" size={12} />
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </nav>
-              <div className="flex-shrink-0 p-2 border-t border-slate-100 space-y-1 bg-white">
-                <button onClick={() => setShowAddModal(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-500 hover:bg-slate-50 hover:text-indigo-600 border border-dashed border-slate-200 hover:border-indigo-300 transition-all">
-                  <Icon name="PlusCircle" size={14} /> 添加资产
-                </button>
-                {assetManager.assets.length > 1 && (
-                  <button onClick={loadOverviewData}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-indigo-600 hover:bg-indigo-50 border border-indigo-200 transition-all font-medium">
-                    <Icon name="PieChart" size={14} /> 多资产总览
-                  </button>
-                )}
-              </div>
-            </aside>
-
-            {/* 右侧内容（独立滚动）*/}
-            <main className="flex-1 overflow-y-auto">
-              <div className="max-w-5xl mx-auto px-4 py-6">
-                <TradeDashboard key={activeAsset.id} userCode={userCode} assetId={activeAsset.id} assetConfig={activeAsset} onUpdateAssetName={updateAssetName}
-                  isBatchImporting={isBatchImporting} batchImportResult={batchImportResult}
-                  setBatchImportResult={setBatchImportResult} handleBatchImport={handleBatchImport}
-                  downloadBatchTemplate={downloadBatchTemplate} assetManagerAssets={assetManager.assets} />
-              </div>
-            </main>
-          </div>
-
-          {/* ===== 手机端底部固定导航栏 ===== */}
-          <div className="mobile-bottom-nav">
-            {[
-              { icon: 'Activity', label: '看板', tab: 'dashboard' },
-              { icon: 'TrendingUp', label: '收益', tab: 'profit' },
-              { icon: 'BarChart2', label: '报表', tab: 'report' },
-              { icon: 'PieChart', label: '总览', tab: 'overview' },
-              { icon: 'Settings', label: '设置', tab: 'settings' },
-            ].map(item => (
-              <button key={item.tab}
-                onClick={() => {
-                  if (item.tab === 'overview') { loadOverviewData(); }
-                  else {
-                    // 通过全局事件通知 TradeDashboard 切换 tab
-                    window.__setMobileTab && window.__setMobileTab(item.tab);
-                  }
-                }}
-                className="flex-1 flex flex-col items-center justify-center gap-0.5 text-slate-400 hover:text-indigo-600 transition-colors py-2">
-                <Icon name={item.icon} size={20} />
-                <span style={{fontSize:'10px'}}>{item.label}</span>
-              </button>
-            ))}
-          </div>
+            ) : (
+              <TradeDashboard key={activeAsset.id} userCode={userCode} assetId={activeAsset.id} assetConfig={activeAsset} onUpdateAssetName={updateAssetName} />
+            )}
+          </main>
 
           {/* 多资产总览弹窗 */}
           {showOverview && (
-            <div className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center overflow-y-auto" style={{padding: window.innerWidth < 768 ? "0" : "16px"}}>
-              <div className="bg-white w-full max-w-4xl" style={{borderRadius: window.innerWidth < 768 ? "0" : "16px", minHeight: window.innerWidth < 768 ? "100dvh" : "auto", margin: window.innerWidth < 768 ? "0" : "32px auto"}}>
-                <div className="p-4 border-b flex justify-between items-center flex-wrap gap-3">
-                  <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Icon name="PieChart" size={18} className="text-indigo-500" /> 多资产收益总览</h2>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => downloadBatchTemplate(assetManager.assets)}
-                      className="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors">
-                      <Icon name="Download" size={13} /> 下载批量模板
-                    </button>
-                    <label className={`text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors cursor-pointer font-medium ${isBatchImporting ? 'border-indigo-200 bg-indigo-50 text-indigo-400' : 'border-indigo-300 bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}>
-                      {isBatchImporting
-                        ? <><Icon name="RefreshCw" size={13} className="animate-spin" /> 导入中...</>
-                        : <><Icon name="Upload" size={13} /> 一键批量导入</>
-                      }
-                      <input type="file" accept=".csv,.txt" className="hidden"
-                        onChange={e => { if(e.target.files[0]) handleBatchImport(e.target.files[0]); e.target.value=''; }}
-                        disabled={isBatchImporting} />
-                    </label>
-                    <button onClick={() => setShowOverview(false)} className="text-slate-400 hover:text-slate-600 p-1 overview-close-btn"><Icon name="X" size={18} /></button>
-                  </div>
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center p-4 overflow-y-auto">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8">
+                <div className="p-6 border-b flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Icon name="PieChart" size={20} className="text-indigo-500" /> 多资产收益总览</h2>
+                  <button onClick={() => setShowOverview(false)} className="text-slate-400 hover:text-slate-600 p-1"><Icon name="X" size={20} /></button>
                 </div>
 
-                {/* 批量导入结果提示 */}
-                {batchImportResult && (
-                  <div className="mx-6 mt-4 rounded-xl border overflow-hidden">
-                    <div className="px-4 py-2.5 bg-emerald-50 border-b border-emerald-100 flex justify-between items-center">
-                      <span className="text-sm font-bold text-emerald-700 flex items-center gap-2"><Icon name="CheckCircle" size={15} /> 导入完成</span>
-                      <button onClick={() => setBatchImportResult(null)} className="text-slate-400 hover:text-slate-600"><Icon name="X" size={14} /></button>
-                    </div>
-                    <div className="p-3 space-y-1.5 bg-white">
-                      {batchImportResult.matched.map((m, i) => (
-                        <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
-                          <span className="text-slate-600 flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
-                            {m.name} <span className="text-slate-400 font-mono">({m.code})</span>
-                          </span>
-                          <span className="text-emerald-600 font-medium">新增 {m.added} 笔
-                            {m.skipped > 0 && <span className="text-slate-400 ml-1">· 跳过重复 {m.skipped}</span>}
-                          </span>
-                        </div>
-                      ))}
-                      {batchImportResult.unmatched.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-slate-100">
-                          <div className="text-xs text-amber-600 font-medium mb-1">以下代码未找到对应资产：</div>
-                          {batchImportResult.unmatched.map((u, i) => (
-                            <div key={i} className="text-xs text-slate-400">{u.code}（{u.count} 条）{u.error ? ' - ' + u.error : ''}</div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div className="p-6 space-y-6 overview-body overview-scroll-area">
+                <div className="p-6 space-y-6">
+                  {/* 汇总卡片 */}
                   {(() => {
                     const allAssets = Object.values(overviewData);
                     if (allAssets.length === 0) return <div className="text-center py-8 text-slate-400"><Icon name="RefreshCw" size={24} className="animate-spin mx-auto" /></div>;
 
-                    // ---- 汇总计算 ----
-                    let totalPrincipal = 0, totalRecords = 0, totalBuyAmount = 0, totalSellAmount = 0;
-                    let totalRealizedProfit = 0;
-
+                    let totalPrincipal = 0, totalReturn = 0, totalRealized = 0, totalRecords = 0;
                     allAssets.forEach(({ config, records }) => {
                       if (!config) return;
                       totalPrincipal += config.totalPrincipal || 0;
                       totalRecords += records.length;
-                      const sorted = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
-                      let shares = 0, costBasis = 0, realizedProfit = 0;
-                      sorted.forEach(r => {
-                        if (r.type === 'buy') {
-                          shares += r.shares; costBasis += r.amount; totalBuyAmount += r.amount;
-                        } else {
-                          const avgCost = shares > 0 ? costBasis / shares : 0;
-                          const costOfSell = r.shares * avgCost;
-                          costBasis -= costOfSell;
-                          realizedProfit += (r.amount - costOfSell);
-                          shares -= r.shares;
-                          totalSellAmount += r.amount;
-                        }
-                      });
-                      totalRealizedProfit += realizedProfit;
-                    });
-
-                    const totalNetFlow = totalSellAmount - totalBuyAmount;
-                    const totalBuyCount = allAssets.reduce((s, {records}) => s + records.filter(r=>r.type==='buy').length, 0);
-                    const totalSellCount = allAssets.reduce((s, {records}) => s + records.filter(r=>r.type==='sell').length, 0);
-
-                    // ---- 排序状态（用 useRef 模拟，避免 Hook 规则问题）----
-
-                    const getNetFlow = ({records}) => records.filter(r=>r.type==='sell').reduce((s,r)=>s+r.amount,0) - records.filter(r=>r.type==='buy').reduce((s,r)=>s+r.amount,0);
-                    const getLastDate = ({records}) => records.length ? Math.max(...records.map(r=>new Date(r.date))) : 0;
-                    const getRealizedProfit = ({records}) => {
-                      const sorted = [...records].sort((a,b)=>new Date(a.date)-new Date(b.date));
-                      let shares=0, costBasis=0, profit=0;
-                      sorted.forEach(r=>{
-                        if(r.type==='buy'){shares+=r.shares;costBasis+=r.amount;}
-                        else{const avg=shares>0?costBasis/shares:0;costBasis-=r.shares*avg;profit+=(r.amount-r.shares*avg);shares-=r.shares;}
-                      });
-                      return profit;
-                    };
-
-                    const sortedAssets = [...allAssets].sort((a, b) => {
-                      if (overviewSortBy === 'profit') return getRealizedProfit(b) - getRealizedProfit(a);
-                      if (overviewSortBy === 'recent') return getLastDate(b) - getLastDate(a);
-                      if (overviewSortBy === 'principal') return (b.config?.totalPrincipal||0) - (a.config?.totalPrincipal||0);
-                      return (a.asset?.name||'').localeCompare(b.asset?.name||'');
+                      // 简单估算：用记录里的净卖出
+                      const realized = records.filter(r => r.type === 'sell').reduce((s, r) => s + r.amount, 0)
+                                     - records.filter(r => r.type === 'buy').reduce((s, r) => s + r.amount, 0);
+                      totalRealized += realized;
                     });
 
                     return (
                       <>
-                        {/* 顶部汇总卡片 */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 overview-summary-grid">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                           <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 text-center">
-                            <div className="text-xs text-indigo-400 mb-1">持仓标的</div>
+                            <div className="text-xs text-indigo-400 mb-1">总资产数</div>
                             <div className="text-2xl font-bold text-indigo-600">{allAssets.length}</div>
-                            <div className="text-xs text-slate-400 mt-1">共 {totalRecords} 笔交易</div>
+                            <div className="text-xs text-slate-400">个标的</div>
                           </div>
                           <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-center">
-                            <div className="text-xs text-slate-400 mb-1">总投入本金</div>
+                            <div className="text-xs text-slate-400 mb-1">总本金</div>
                             <div className="text-2xl font-bold text-slate-700">¥{(totalPrincipal/10000).toFixed(1)}万</div>
-                            <div className="text-xs text-slate-400 mt-1">实际买入 ¥{(totalBuyAmount/10000).toFixed(1)}万</div>
                           </div>
                           <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 text-center">
-                            <div className="text-xs text-emerald-400 mb-1">已落袋盈利</div>
-                            <div className={`text-2xl font-bold ${totalRealizedProfit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                              {totalRealizedProfit >= 0 ? '+' : ''}¥{Math.abs(totalRealizedProfit).toLocaleString(undefined,{maximumFractionDigits:0})}
-                            </div>
-                            <div className="text-xs text-slate-400 mt-1">卖出 {totalSellCount} 笔</div>
+                            <div className="text-xs text-emerald-400 mb-1">总交易笔数</div>
+                            <div className="text-2xl font-bold text-emerald-600">{totalRecords}</div>
+                            <div className="text-xs text-slate-400">笔</div>
                           </div>
                           <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 text-center">
-                            <div className="text-xs text-amber-400 mb-1">净资金流出</div>
-                            <div className={`text-2xl font-bold ${totalNetFlow >= 0 ? 'text-red-500' : 'text-green-600'}`}>
-                              {totalNetFlow >= 0 ? '+' : ''}¥{Math.abs(totalNetFlow).toLocaleString(undefined,{maximumFractionDigits:0})}
+                            <div className="text-xs text-amber-400 mb-1">净卖出金额</div>
+                            <div className={`text-2xl font-bold ${totalRealized >= 0 ? 'text-red-500' : 'text-green-600'}`}>
+                              {totalRealized >= 0 ? '+' : ''}¥{Math.abs(totalRealized).toLocaleString(undefined,{maximumFractionDigits:0})}
                             </div>
-                            <div className="text-xs text-slate-400 mt-1">买 {totalBuyCount} / 卖 {totalSellCount}</div>
                           </div>
                         </div>
 
-                        {/* ===== 网格点位汇总表 ===== */}
-                        <div className="rounded-xl border border-slate-200 overflow-hidden">
-                          <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
-                            <Icon name="Target" size={14} className="text-indigo-500" />
-                            <span className="text-sm font-bold text-slate-700">全标的网格点位汇总</span>
-                            <span className="text-xs text-slate-400 ml-1">价格 / 股数</span>
-                          </div>
-                          <div className="overflow-x-auto overview-table-wrap">
-                            <table className="w-full text-xs overview-grid-table">
-                              <thead>
-                                <tr className="bg-slate-50 text-slate-400 border-b border-slate-100">
-                                  <th className="px-4 py-3 text-left font-medium">标的</th>
-                                  <th className="px-3 py-3 text-center font-medium text-red-300">卖3</th>
-                                  <th className="px-3 py-3 text-center font-medium text-red-400">卖2</th>
-                                  <th className="px-3 py-3 text-center font-medium text-red-600">卖1</th>
-                                  <th className="px-3 py-3 text-center font-medium text-slate-400">上次成交</th>
-                                  <th className="px-3 py-3 text-center font-medium text-emerald-600">买1</th>
-                                  <th className="px-3 py-3 text-center font-medium text-emerald-400">买2</th>
-                                  <th className="px-3 py-3 text-center font-medium text-emerald-300">买3</th>
-                                  <th className="px-3 py-3 text-center font-medium text-slate-400">网格</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100">
-                                {sortedAssets.map(({ asset, config, records }) => {
-                                  if (!config || records.length === 0) return (
-                                    <tr key={asset.id} className="hover:bg-slate-50">
-                                      <td className="px-4 py-3">
-                                        <div className="font-medium text-slate-700 truncate max-w-[100px]">{asset.name}</div>
-                                        <div className="text-slate-400 font-mono text-[10px]">{config?.fundCode}</div>
-                                      </td>
-                                      <td colSpan={7} className="text-center text-slate-300 py-3">暂无交易记录</td>
-                                      <td className="px-3 py-3 text-center text-slate-400 font-mono">{config?.gridSizePct}%</td>
-                                    </tr>
-                                  );
-
-                                  // ── 计算持仓股数 ──
-                                  const sortedRec = [...records].sort((a,b) => new Date(a.date) - new Date(b.date));
-                                  let totalShares = 0, costBasis = 0;
-                                  sortedRec.forEach(r => {
-                                    if (r.type === 'buy') { totalShares += r.shares; costBasis += r.amount; }
-                                    else { const avg = totalShares > 0 ? costBasis / totalShares : 0; costBasis -= r.shares * avg; totalShares -= r.shares; }
-                                  });
-                                  totalShares = Math.max(0, Math.round(totalShares));
-
-                                  const lastTrade = [...records].sort((a,b) => new Date(b.date) - new Date(a.date))[0];
-                                  const lastPrice = lastTrade.price;
-                                  const g = (config.gridSizePct || 5) / 100;
-
-                                  // 使用统一计算函数（与完整网格计划一致）
-                                  const { sellLevels, buyLevels } = calcGridLevels(lastPrice, config, totalShares, 3);
-                                  const [s1d, s2d, s3d] = sellLevels;
-                                  const [b1d, b2d, b3d] = buyLevels;
-
-                                  const fmtP = (n) => n.toFixed(4);
-                                  const fmtS = (n) => n > 0 ? n.toLocaleString() : '—';
-
-                                  const Cell = ({ price, shares, colorClass, boldPrice = false, bg = '' }) => (
-                                    <td className={`px-3 py-3 text-center ${bg}`}>
-                                      <div className={`font-mono ${boldPrice ? 'font-bold' : ''} ${colorClass} leading-tight`}>{fmtP(price)}</div>
-                                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">{fmtS(shares)}股</div>
-                                    </td>
-                                  );
-
-                                  return (
-                                    <tr key={asset.id} className="hover:bg-slate-50 cursor-pointer transition-colors"
-                                      onClick={() => { setAssetManager(p => ({...p, activeId: asset.id})); setShowOverview(false); }}>
-                                      <td className="px-4 py-3">
-                                        <div className="font-medium text-slate-700 truncate max-w-[90px] asset-name">{asset.name}</div>
-                                        <div className="text-slate-400 font-mono text-[10px]">{config.fundCode}</div>
-                                        <div className="text-[10px] text-indigo-400 mt-0.5">持仓 {totalShares.toLocaleString()}股</div>
-                                      </td>
-                                      <Cell price={s3d.price} shares={s3d.shares} colorClass="text-red-300" />
-                                      <Cell price={s2d.price} shares={s2d.shares} colorClass="text-red-400" />
-                                      <Cell price={s1d.price} shares={s1d.shares} colorClass="text-red-600" boldPrice />
-                                      <td className="px-3 py-3 text-center bg-slate-50">
-                                        <div className="font-mono font-bold text-slate-600 leading-tight">{fmtP(lastPrice)}</div>
-                                        <div className="text-[10px] text-slate-400 mt-0.5">成交价</div>
-                                      </td>
-                                      <Cell price={b1d.price} shares={b1d.shares} colorClass="text-emerald-600" boldPrice />
-                                      <Cell price={b2d.price} shares={b2d.shares} colorClass="text-emerald-500" />
-                                      <Cell price={b3d.price} shares={b3d.shares} colorClass="text-emerald-400" />
-                                      <td className="px-3 py-3 text-center">
-                                        <div className="text-slate-400 font-mono">{config.gridSizePct}%</div>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-
-                        {/* 排序栏 */}
-                        <div className="flex items-center gap-2 text-xs flex-wrap">
-                          <span className="text-slate-400 font-medium">排序：</span>
-                          {[['name','名称'],['profit','已落袋'],['principal','本金'],['recent','最近操作']].map(([key, label]) => (
-                            <button key={key} onClick={() => setOverviewSortBy(key)}
-                              className={`px-3 py-1 rounded-full border transition-all ${overviewSortBy === key ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'}`}>
-                              {label}
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* 各资产明细卡片 */}
+                        {/* 各资产明细 */}
                         <div className="space-y-3">
-                          {sortedAssets.map(({ asset, config, records }) => {
+                          {allAssets.map(({ asset, config, records }) => {
                             if (!config) return null;
-                            const sorted = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
-                            let shares = 0, costBasis = 0, realizedProfit = 0;
-                            sorted.forEach(r => {
-                              if (r.type === 'buy') { shares += r.shares; costBasis += r.amount; }
-                              else { const avg = shares > 0 ? costBasis / shares : 0; costBasis -= r.shares * avg; realizedProfit += (r.amount - r.shares * avg); shares -= r.shares; }
-                            });
                             const buyTotal = records.filter(r => r.type === 'buy').reduce((s, r) => s + r.amount, 0);
                             const sellTotal = records.filter(r => r.type === 'sell').reduce((s, r) => s + r.amount, 0);
                             const netFlow = sellTotal - buyTotal;
                             const buyCount = records.filter(r => r.type === 'buy').length;
                             const sellCount = records.filter(r => r.type === 'sell').length;
                             const lastRecord = [...records].sort((a,b) => new Date(b.date) - new Date(a.date))[0];
-                            const avgCost = shares > 0 && costBasis > 0 ? costBasis / shares : 0;
-                            const positionUsed = config.totalPrincipal > 0 ? Math.min(100, (costBasis / config.totalPrincipal) * 100) : 0;
-                            const positionColor = positionUsed > 80 ? '#ef4444' : positionUsed > 50 ? '#f59e0b' : '#10b981';
 
                             return (
-                              <div key={asset.id}
-                                className="border border-slate-200 rounded-xl p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group"
-                                onClick={() => { setAssetManager(p => ({...p, activeId: asset.id})); setShowOverview(false); }}>
-
-                                {/* 标题行 */}
+                              <div key={asset.id} className="border border-slate-200 rounded-xl p-4 hover:border-indigo-200 transition-colors cursor-pointer" onClick={() => { setAssetManager(p => ({...p, activeId: asset.id})); setShowOverview(false); }}>
                                 <div className="flex justify-between items-start mb-3">
                                   <div>
-                                    <div className="font-bold text-slate-800 flex items-center gap-2 flex-wrap">
-                                      <span className={`text-xs text-white px-1.5 py-0.5 rounded ${asset.type === 'stock' ? 'bg-blue-500' : 'bg-orange-500'}`}>
-                                        {asset.type === 'stock' ? '股票' : '基金'}
-                                      </span>
+                                    <div className="font-bold text-slate-800 flex items-center gap-2">
+                                      <span className={`text-xs text-white px-1.5 py-0.5 rounded ${asset.type === 'stock' ? 'bg-blue-500' : 'bg-orange-500'}`}>{asset.type === 'stock' ? '股票' : '基金'}</span>
                                       {asset.name}
-                                      <span className="text-xs text-slate-400 font-normal font-mono">{config.fundCode}</span>
+                                      <span className="text-xs text-slate-400 font-normal">{config.fundCode}</span>
                                     </div>
-                                    <div className="text-xs text-slate-400 mt-1">
-                                      本金 ¥{config.totalPrincipal.toLocaleString()} · 网格 {config.gridSizePct}% · 天{config.skyLine} / 地{config.groundLine}
-                                    </div>
+                                    <div className="text-xs text-slate-400 mt-1">本金 ¥{config.totalPrincipal.toLocaleString()} · 网格 {config.gridSizePct}%</div>
                                   </div>
                                   <div className="text-right">
-                                    <div className={`text-lg font-bold ${realizedProfit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                      {realizedProfit >= 0 ? '+' : ''}¥{realizedProfit.toLocaleString(undefined,{maximumFractionDigits:0})}
+                                    <div className={`text-lg font-bold ${netFlow >= 0 ? 'text-red-500' : 'text-green-600'}`}>
+                                      {netFlow >= 0 ? '+' : ''}¥{netFlow.toLocaleString(undefined,{maximumFractionDigits:0})}
                                     </div>
-                                    <div className="text-xs text-slate-400">已落袋</div>
+                                    <div className="text-xs text-slate-400">净卖出</div>
                                   </div>
                                 </div>
-
-                                {/* 仓位进度条 */}
-                                <div className="mb-3">
-                                  <div className="flex justify-between text-xs text-slate-400 mb-1">
-                                    <span>仓位使用 <span className="font-medium text-slate-600">{positionUsed.toFixed(1)}%</span></span>
-                                    <span>持仓 <span className="font-medium text-slate-600">{Math.round(shares)}</span> 份 · 均成本 <span className="font-medium text-slate-600">{avgCost > 0 ? avgCost.toFixed(4) : '—'}</span></span>
-                                  </div>
-                                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-full rounded-full transition-all duration-500"
-                                      style={{ width: `${positionUsed}%`, background: positionColor }}></div>
-                                  </div>
-                                </div>
-
-                                {/* 数据格子 */}
-                                <div className="grid grid-cols-4 gap-2 text-xs text-center">
-                                  <div className="bg-emerald-50 p-2 rounded-lg">
-                                    <div className="text-emerald-500 mb-0.5">买入 {buyCount}笔</div>
-                                    <div className="font-bold text-emerald-700">¥{(buyTotal/10000).toFixed(1)}万</div>
-                                  </div>
-                                  <div className="bg-red-50 p-2 rounded-lg">
-                                    <div className="text-red-400 mb-0.5">卖出 {sellCount}笔</div>
-                                    <div className="font-bold text-red-600">¥{(sellTotal/10000).toFixed(1)}万</div>
-                                  </div>
-                                  <div className={`p-2 rounded-lg ${netFlow >= 0 ? 'bg-red-50' : 'bg-emerald-50'}`}>
-                                    <div className="text-slate-400 mb-0.5">净流出</div>
-                                    <div className={`font-bold ${netFlow >= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                                      {netFlow >= 0 ? '+' : ''}¥{(netFlow/10000).toFixed(1)}万
-                                    </div>
-                                  </div>
-                                  <div className="bg-slate-50 p-2 rounded-lg">
-                                    <div className="text-slate-400 mb-0.5">最近操作</div>
-                                    <div className="font-bold text-slate-600 text-[10px]">{lastRecord ? lastRecord.date.split('T')[0] : '—'}</div>
-                                  </div>
-                                </div>
-
-                                <div className="mt-2 text-right text-xs text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  点击切换到此资产 →
+                                <div className="grid grid-cols-4 gap-3 text-xs text-center">
+                                  <div className="bg-slate-50 p-2 rounded-lg"><div className="text-slate-400">交易笔数</div><div className="font-bold text-slate-700">{records.length}</div></div>
+                                  <div className="bg-emerald-50 p-2 rounded-lg"><div className="text-emerald-400">买入 {buyCount}笔</div><div className="font-bold text-emerald-700">¥{(buyTotal/10000).toFixed(1)}万</div></div>
+                                  <div className="bg-red-50 p-2 rounded-lg"><div className="text-red-400">卖出 {sellCount}笔</div><div className="font-bold text-red-700">¥{(sellTotal/10000).toFixed(1)}万</div></div>
+                                  <div className="bg-slate-50 p-2 rounded-lg"><div className="text-slate-400">最近操作</div><div className="font-bold text-slate-700">{lastRecord ? lastRecord.date.split('T')[0] : '—'}</div></div>
                                 </div>
                               </div>
                             );
