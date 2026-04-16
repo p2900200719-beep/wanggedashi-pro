@@ -232,32 +232,35 @@
 
     // 全局 JSONP 请求计数器，保证每次请求 callback key 唯一
     const fetchStockRealData = (code) => {
+      // push2.eastmoney.com / push2his.eastmoney.com 在当前部署环境不可访问
+      // 统一使用 fund.eastmoney.com/pingzhongdata 接口（与场外基金相同域名，已验证可访问）
+      // 场内ETF直接用6位代码，A股天天基金同样收录历史净值数据
       return new Promise((resolve, reject) => {
         const timestamp = Date.now();
-        const getSecIdPrefix = (code) => { if (/^(5|6|9|11)/.test(code)) return "1"; return "0"; };
-        const secId = `${getSecIdPrefix(code)}.${code}`;
-        const jsonp = (url, cbName) => new Promise((res, rej) => {
-          const script = document.createElement("script");
-          script.id = cbName; script.src = url;
-          const cleanup = () => { try { delete window[cbName]; } catch (e) {} const s = document.getElementById(cbName); if (s) s.remove(); };
-          window[cbName] = (data) => { cleanup(); res(data); };
-          script.onerror = () => { cleanup(); rej(new Error("网络请求失败")); };
-          document.body.appendChild(script);
-        });
-        (async () => {
+        const script = document.createElement('script');
+        script.src = `https://fund.eastmoney.com/pingzhongdata/${code}.js?v=${timestamp}`;
+        const cleanup = () => {
+          if (document.body.contains(script)) document.body.removeChild(script);
+          try { delete window.fS_name; delete window.Data_netWorthTrend; } catch(e) {}
+        };
+        script.onload = () => {
           try {
-            const cbNameName = `cb_stock_name_${timestamp}`;
-            let stockName = "";
-            try { const nameRes = await jsonp(`https://push2.eastmoney.com/api/qt/stock/get?cb=${cbNameName}&secid=${secId}&fields=f58,f57`, cbNameName); stockName = nameRes?.data?.f58 || ""; } catch (e) {}
-            const cbNameK = `cb_stock_k_${timestamp}`;
-            const kRes = await jsonp(`https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=${cbNameK}&secid=${secId}&fields1=f1&fields2=f51,f53,f57,f58&klt=101&fqt=1&end=20500101&lmt=1000`, cbNameK);
-            if (kRes && kRes.data && kRes.data.klines) {
-              const name = stockName || kRes.data.name || `标的${code}`;
-              const formattedData = kRes.data.klines.map((line) => { const parts = line.split(","); return { date: parts[0], netValue: parseFloat(parts[1]), volume: parseFloat(parts[2]) || 0, equityReturn: 0 }; });
+            if (window.Data_netWorthTrend && window.Data_netWorthTrend.length > 0) {
+              const name = window.fS_name || `标的${code}`;
+              const formattedData = window.Data_netWorthTrend.map(item => ({
+                date:         new Date(item.x + 43200000).toISOString().split('T')[0],
+                netValue:     parseFloat(item.y),
+                volume:       0,
+                equityReturn: parseFloat(item.equityReturn) || 0,
+              }));
               resolve({ name, data: formattedData });
-            } else { reject("未获取到场内标的数据，请检查代码或市场"); }
-          } catch (err) { reject("数据解析失败"); }
-        })();
+            } else {
+              reject("未获取到数据，请检查代码是否正确");
+            }
+          } catch(e) { reject("数据解析异常"); } finally { cleanup(); }
+        };
+        script.onerror = () => { cleanup(); reject("请求失败，请检查网络或代码"); };
+        document.body.appendChild(script);
       });
     };
 
