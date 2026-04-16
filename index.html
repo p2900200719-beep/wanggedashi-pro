@@ -11,7 +11,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.0/Recharts.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
   <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.26.0/dist/umd/supabase.js"></script>
 
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
@@ -137,73 +137,58 @@
     };
 
     // =============================================
-    // Supabase 数据层
+    // Supabase 数据层（原生 fetch，绕过 supabase-js 406 问题）
     // =============================================
+    const sbFetch = async (method, table, params = '', body = null) => {
+      const url = `${SUPABASE_URL}/rest/v1/${table}${params}`;
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=minimal' : 'return=minimal',
+        },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`${res.status}: ${err}`);
+      }
+      const text = await res.text();
+      return text ? JSON.parse(text) : [];
+    };
+
     const db = {
       async getManager(userCode) {
-        const { data, error } = await supabase
-          .from('grid_manager')
-          .select('manager')
-          .eq('user_code', userCode)
-          .single();
-        if (error && error.code !== 'PGRST116') throw error;
-        return data ? data.manager : null;
+        const data = await sbFetch('GET', 'grid_manager', `?select=manager&user_code=eq.${encodeURIComponent(userCode)}`);
+        return data.length > 0 ? data[0].manager : null;
       },
       async setManager(userCode, manager) {
-        const { error } = await supabase
-          .from('grid_manager')
-          .upsert({ user_code: userCode, manager, updated_at: new Date().toISOString() }, { onConflict: 'user_code' });
-        if (error) throw error;
+        await sbFetch('POST', 'grid_manager', '?on_conflict=user_code', { user_code: userCode, manager, updated_at: new Date().toISOString() });
       },
       async getConfig(userCode, assetId) {
-        const { data, error } = await supabase
-          .from('grid_configs')
-          .select('config')
-          .eq('user_code', userCode)
-          .eq('asset_id', String(assetId))
-          .single();
-        if (error && error.code !== 'PGRST116') throw error;
-        return data ? data.config : null;
+        const data = await sbFetch('GET', 'grid_configs', `?select=config&user_code=eq.${encodeURIComponent(userCode)}&asset_id=eq.${encodeURIComponent(String(assetId))}`);
+        return data.length > 0 ? data[0].config : null;
       },
       async setConfig(userCode, assetId, config) {
-        const { error } = await supabase
-          .from('grid_configs')
-          .upsert({ user_code: userCode, asset_id: String(assetId), config, updated_at: new Date().toISOString() }, { onConflict: 'user_code,asset_id' });
-        if (error) throw error;
+        await sbFetch('POST', 'grid_configs', '?on_conflict=user_code,asset_id', { user_code: userCode, asset_id: String(assetId), config, updated_at: new Date().toISOString() });
       },
       async getRecords(userCode, assetId) {
-        const { data, error } = await supabase
-          .from('grid_records')
-          .select('records')
-          .eq('user_code', userCode)
-          .eq('asset_id', String(assetId))
-          .single();
-        if (error && error.code !== 'PGRST116') throw error;
-        return data ? data.records : null;
+        const data = await sbFetch('GET', 'grid_records', `?select=records&user_code=eq.${encodeURIComponent(userCode)}&asset_id=eq.${encodeURIComponent(String(assetId))}`);
+        return data.length > 0 ? data[0].records : null;
       },
       async setRecords(userCode, assetId, records) {
-        const { error } = await supabase
-          .from('grid_records')
-          .upsert({ user_code: userCode, asset_id: String(assetId), records, updated_at: new Date().toISOString() }, { onConflict: 'user_code,asset_id' });
-        if (error) throw error;
+        await sbFetch('POST', 'grid_records', '?on_conflict=user_code,asset_id', { user_code: userCode, asset_id: String(assetId), records, updated_at: new Date().toISOString() });
       },
-      // 回收箱：存入被删资产的完整快照（manager条目 + config + records）
       async getTrash(userCode) {
-        try {
-          // 优先读 localStorage
-          const local = localStorage.getItem(`grid_trash_${userCode}`);
-          if (local) return JSON.parse(local);
-        } catch(e) {}
+        try { const local = localStorage.getItem(`grid_trash_${userCode}`); if (local) return JSON.parse(local); } catch(e) {}
         return [];
       },
       async setTrash(userCode, trash) {
-        // 本地持久化
         try { localStorage.setItem(`grid_trash_${userCode}`, JSON.stringify(trash)); } catch(e) {}
-        // 尝试 Supabase（表不存在时静默）
-        try {
-          await supabase.from('grid_trash')
-            .upsert({ user_code: userCode, trash, updated_at: new Date().toISOString() }, { onConflict: 'user_code' });
-        } catch(e) {}
+        try { await sbFetch('POST', 'grid_trash', '?on_conflict=user_code', { user_code: userCode, trash, updated_at: new Date().toISOString() }); } catch(e) {}
       }
     };
 
@@ -232,35 +217,32 @@
 
     // 全局 JSONP 请求计数器，保证每次请求 callback key 唯一
     const fetchStockRealData = (code) => {
-      // push2.eastmoney.com / push2his.eastmoney.com 在当前部署环境不可访问
-      // 统一使用 fund.eastmoney.com/pingzhongdata 接口（与场外基金相同域名，已验证可访问）
-      // 场内ETF直接用6位代码，A股天天基金同样收录历史净值数据
       return new Promise((resolve, reject) => {
         const timestamp = Date.now();
-        const script = document.createElement('script');
-        script.src = `https://fund.eastmoney.com/pingzhongdata/${code}.js?v=${timestamp}`;
-        const cleanup = () => {
-          if (document.body.contains(script)) document.body.removeChild(script);
-          try { delete window.fS_name; delete window.Data_netWorthTrend; } catch(e) {}
-        };
-        script.onload = () => {
+        const getSecIdPrefix = (code) => { if (/^(5|6|9|11)/.test(code)) return "1"; return "0"; };
+        const secId = `${getSecIdPrefix(code)}.${code}`;
+        const jsonp = (url, cbName) => new Promise((res, rej) => {
+          const script = document.createElement("script");
+          script.id = cbName; script.src = url;
+          const cleanup = () => { try { delete window[cbName]; } catch (e) {} const s = document.getElementById(cbName); if (s) s.remove(); };
+          window[cbName] = (data) => { cleanup(); res(data); };
+          script.onerror = () => { cleanup(); rej(new Error("网络请求失败")); };
+          document.body.appendChild(script);
+        });
+        (async () => {
           try {
-            if (window.Data_netWorthTrend && window.Data_netWorthTrend.length > 0) {
-              const name = window.fS_name || `标的${code}`;
-              const formattedData = window.Data_netWorthTrend.map(item => ({
-                date:         new Date(item.x + 43200000).toISOString().split('T')[0],
-                netValue:     parseFloat(item.y),
-                volume:       0,
-                equityReturn: parseFloat(item.equityReturn) || 0,
-              }));
+            const cbNameName = `cb_stock_name_${timestamp}`;
+            let stockName = "";
+            try { const nameRes = await jsonp(`https://push2.eastmoney.com/api/qt/stock/get?cb=${cbNameName}&secid=${secId}&fields=f58,f57`, cbNameName); stockName = nameRes?.data?.f58 || ""; } catch (e) {}
+            const cbNameK = `cb_stock_k_${timestamp}`;
+            const kRes = await jsonp(`https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=${cbNameK}&secid=${secId}&fields1=f1&fields2=f51,f53,f57,f58&klt=101&fqt=1&end=20500101&lmt=1000`, cbNameK);
+            if (kRes && kRes.data && kRes.data.klines) {
+              const name = stockName || kRes.data.name || `标的${code}`;
+              const formattedData = kRes.data.klines.map((line) => { const parts = line.split(","); return { date: parts[0], netValue: parseFloat(parts[1]), volume: parseFloat(parts[2]) || 0, equityReturn: 0 }; });
               resolve({ name, data: formattedData });
-            } else {
-              reject("未获取到数据，请检查代码是否正确");
-            }
-          } catch(e) { reject("数据解析异常"); } finally { cleanup(); }
-        };
-        script.onerror = () => { cleanup(); reject("请求失败，请检查网络或代码"); };
-        document.body.appendChild(script);
+            } else { reject("未获取到场内标的数据，请检查代码或市场"); }
+          } catch (err) { reject("数据解析失败"); }
+        })();
       });
     };
 
@@ -2125,12 +2107,7 @@
         try { localStorage.setItem(`rotation_pool_${userCode}`, JSON.stringify(newPool)); } catch(e) {}
         // 同时尝试同步到 Supabase（表存在时生效，不存在时静默失败不报错）
         try {
-          const { error } = await supabase.from('rotation_pool')
-            .upsert({ user_code: userCode, pool: newPool, updated_at: new Date().toISOString() }, { onConflict: 'user_code' });
-          // 只有非404错误才输出（404说明表未建，属于预期情况）
-          if (error && !error.message?.includes('relation') && error.code !== '42P01') {
-            console.warn('rotation_pool sync:', error.message);
-          }
+          try { await sbFetch('POST', 'rotation_pool', '?on_conflict=user_code', { user_code: userCode, pool: newPool, updated_at: new Date().toISOString() }); } catch(e) {}
         } catch(e) {}
       };
 
