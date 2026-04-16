@@ -231,99 +231,33 @@
     };
 
     // 全局 JSONP 请求计数器，保证每次请求 callback key 唯一
-    let _jsonpSeq = 0;
-
-    // 场内ETF/股票数据获取
-    // 主接口：fund.eastmoney.com/pingzhongdata（天天基金，场内ETF和场外基金都有，已知可访问）
-    // 全局计数器保证 callback key 唯一
-    let _jsonpSeq = 0;
-
     const fetchStockRealData = (code) => {
       return new Promise((resolve, reject) => {
-        const uid = `${Date.now()}_${++_jsonpSeq}`;
-
-        // 市场判断
-        const isSH = /^(60|68|51|52|53|54|55|56|57|58|59|11|78|83)/.test(code);
-        const prefix = isSH ? "1" : "0";
-        const mkt = isSH ? "sh" : "sz";
-        const secId = `${prefix}.${code}`;
-
-        // ── 接口1：东方财富 push2his K线（原始可用接口）────
-        const tryKline = () => new Promise((res, rej) => {
-          const jsonp = (url, cb) => new Promise((r, e) => {
-            const s = document.createElement('script');
-            s.src = url;
-            const clean = () => { try { delete window[cb]; } catch(_){} if(s.parentNode) s.parentNode.removeChild(s); };
-            window[cb] = d => { clean(); r(d); };
-            s.onerror = () => { clean(); e(new Error('net')); };
-            document.body.appendChild(s);
-          });
-          (async () => {
-            try {
-              let name = '';
-              try { const cbN = `cb_n_${uid}`; const nr = await jsonp(`https://push2.eastmoney.com/api/qt/stock/get?cb=${cbN}&secid=${secId}&fields=f58`, cbN); name = nr?.data?.f58 || ''; } catch(_) {}
-              const cbK = `cb_k_${uid}`;
-              const kr = await jsonp(`https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=${cbK}&secid=${secId}&fields1=f1&fields2=f51,f53,f57,f58&klt=101&fqt=1&end=20500101&lmt=1000`, cbK);
-              if (!kr?.data?.klines?.length) { rej(new Error('empty')); return; }
-              const data = kr.data.klines.map(l => { const p=l.split(','); return {date:p[0],netValue:parseFloat(p[1])||0,volume:parseFloat(p[2])||0,amount:parseFloat(p[3])||0,equityReturn:0}; }).filter(d=>d.netValue>0);
-              res({ name: name||kr.data.name||`标的${code}`, data });
-            } catch(e) { rej(e); }
-          })();
+        const timestamp = Date.now();
+        const getSecIdPrefix = (code) => { if (/^(5|6|9|11)/.test(code)) return "1"; return "0"; };
+        const secId = `${getSecIdPrefix(code)}.${code}`;
+        const jsonp = (url, cbName) => new Promise((res, rej) => {
+          const script = document.createElement("script");
+          script.id = cbName; script.src = url;
+          const cleanup = () => { try { delete window[cbName]; } catch (e) {} const s = document.getElementById(cbName); if (s) s.remove(); };
+          window[cbName] = (data) => { cleanup(); res(data); };
+          script.onerror = () => { cleanup(); rej(new Error("网络请求失败")); };
+          document.body.appendChild(script);
         });
-
-        // ── 接口2：天天基金 pingzhongdata（ETF净值，同域名已验证可访问）────
-        const tryFundPingzhong = () => new Promise((res, rej) => {
-          const ts = Date.now();
-          const s = document.createElement('script');
-          s.src = `https://fund.eastmoney.com/pingzhongdata/${code}.js?v=${ts}`;
-          let done = false;
-          const clean = () => { if(s.parentNode) s.parentNode.removeChild(s); try{delete window.fS_name; delete window.Data_netWorthTrend;}catch(_){} };
-          s.onload = () => {
-            if(done) return; done = true;
-            try {
-              if(window.Data_netWorthTrend?.length > 0) {
-                const name = window.fS_name || `标的${code}`;
-                const data = window.Data_netWorthTrend.map(item => ({date:new Date(item.x+43200000).toISOString().split('T')[0],netValue:parseFloat(item.y)||0,volume:0,amount:0,equityReturn:parseFloat(item.equityReturn)||0})).filter(d=>d.netValue>0);
-                clean(); if(data.length) res({name,data}); else rej(new Error('nodata'));
-              } else { clean(); rej(new Error('empty')); }
-            } catch(e) { clean(); rej(e); }
-          };
-          s.onerror = () => { if(done) return; done=true; clean(); rej(new Error('net')); };
-          document.body.appendChild(s);
-        });
-
-        // ── 接口3：天天基金 股票历史净值接口（A股专用，同域名）────
-        const tryStockFundApi = () => new Promise((res, rej) => {
-          // 天天基金收录A股历史数据，URL格式：基金代码用 sh/sz 前缀
-          const ts = Date.now();
-          const s = document.createElement('script');
-          s.src = `https://fund.eastmoney.com/pingzhongdata/${mkt}${code}.js?v=${ts}`;
-          let done = false;
-          const clean = () => { if(s.parentNode) s.parentNode.removeChild(s); try{delete window.fS_name; delete window.Data_netWorthTrend;}catch(_){} };
-          s.onload = () => {
-            if(done) return; done=true;
-            try {
-              if(window.Data_netWorthTrend?.length > 0) {
-                const name = window.fS_name || `标的${code}`;
-                const data = window.Data_netWorthTrend.map(item => ({date:new Date(item.x+43200000).toISOString().split('T')[0],netValue:parseFloat(item.y)||0,volume:0,amount:0,equityReturn:0})).filter(d=>d.netValue>0);
-                clean(); if(data.length) res({name,data}); else rej(new Error('nodata'));
-              } else { clean(); rej(new Error('empty')); }
-            } catch(e) { clean(); rej(e); }
-          };
-          s.onerror = () => { if(done) return; done=true; clean(); rej(new Error('net')); };
-          document.body.appendChild(s);
-        });
-
-        // 执行顺序：K线接口（最准）→ pingzhongdata ETF格式 → sh/sz前缀A股格式
-        tryKline()
-          .then(resolve)
-          .catch(() => tryFundPingzhong()
-            .then(resolve)
-            .catch(() => tryStockFundApi()
-              .then(resolve)
-              .catch(() => reject('数据获取失败，请检查代码'))
-            )
-          );
+        (async () => {
+          try {
+            const cbNameName = `cb_stock_name_${timestamp}`;
+            let stockName = "";
+            try { const nameRes = await jsonp(`https://push2.eastmoney.com/api/qt/stock/get?cb=${cbNameName}&secid=${secId}&fields=f58,f57`, cbNameName); stockName = nameRes?.data?.f58 || ""; } catch (e) {}
+            const cbNameK = `cb_stock_k_${timestamp}`;
+            const kRes = await jsonp(`https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=${cbNameK}&secid=${secId}&fields1=f1&fields2=f51,f53,f57,f58&klt=101&fqt=1&end=20500101&lmt=1000`, cbNameK);
+            if (kRes && kRes.data && kRes.data.klines) {
+              const name = stockName || kRes.data.name || `标的${code}`;
+              const formattedData = kRes.data.klines.map((line) => { const parts = line.split(","); return { date: parts[0], netValue: parseFloat(parts[1]), volume: parseFloat(parts[2]) || 0, equityReturn: 0 }; });
+              resolve({ name, data: formattedData });
+            } else { reject("未获取到场内标的数据，请检查代码或市场"); }
+          } catch (err) { reject("数据解析失败"); }
+        })();
       });
     };
 
