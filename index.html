@@ -239,7 +239,13 @@
     const fetchStockRealData = (code) => {
       return new Promise((resolve, reject) => {
 
-        // ── 主接口：天天基金 pingzhongdata（与场外基金同域名，已验证可用）──
+        // ── 代码类型判断 ──────────────────────────────
+        // A股股票（60/00/30/68/83开头）：只走K线接口，天天基金接口数据不准确
+        // 场内ETF（51/52/53/15/16/58/51/56开头）：优先天天基金，备用K线
+        const isAStock = /^(60|00|30|68|83|00)/.test(code);
+        const isETF    = /^(51|52|53|54|55|56|57|58|59|15|16|17|56|58|11|78)/.test(code);
+
+        // ── 天天基金 pingzhongdata 接口（ETF净值，已验证可访问）──
         const tryFundApi = () => new Promise((res, rej) => {
           const ts = Date.now();
           const script = document.createElement('script');
@@ -270,7 +276,7 @@
           document.body.appendChild(script);
         });
 
-        // ── 备用接口：push2his K线（部分环境可用）──────
+        // ── 东方财富 K线接口（A股股票 + ETF 均适用）──
         const tryKlineApi = () => new Promise((res, rej) => {
           const getPrefix = (c) => {
             if (/^(51|52|53|54|55|56|57|58|59|60|68|11|78)/.test(c)) return "1";
@@ -309,10 +315,17 @@
           })();
         });
 
-        // 先试天天基金接口，失败再试K线接口
-        tryFundApi()
-          .then(resolve)
-          .catch(() => tryKlineApi().then(resolve).catch(() => reject('数据获取失败，请确认代码正确')));
+        if (isAStock) {
+          // A股股票：只用K线接口，不走天天基金（会拿到错误净值数据）
+          tryKlineApi()
+            .then(resolve)
+            .catch(() => reject('数据获取失败，请确认股票代码正确'));
+        } else {
+          // ETF / 其他：先试天天基金（已验证可访问），失败再试K线
+          tryFundApi()
+            .then(resolve)
+            .catch(() => tryKlineApi().then(resolve).catch(() => reject('数据获取失败，请确认代码正确')));
+        }
       });
     };
 
