@@ -195,36 +195,51 @@
     // =============================================
     // 数据获取
     // =============================================
-    const fetchFundRealData = (code) => {
-      return new Promise((resolve, reject) => {
-        const timestamp = Date.now();
-        const script = document.createElement('script');
-        script.src = `https://fund.eastmoney.com/pingzhongdata/${code}.js?v=${timestamp}`;
-        const cleanup = () => { if (document.body.contains(script)) document.body.removeChild(script); try { delete window.fS_name; delete window.Data_netWorthTrend; } catch (e) {} };
-        script.onload = () => {
-          try {
-            if (window.Data_netWorthTrend && window.Data_netWorthTrend.length > 0) {
-              const name = window.fS_name || '未知基金';
-              const formattedData = window.Data_netWorthTrend.map(item => ({ date: new Date(item.x + 43200000).toISOString().split('T')[0], netValue: parseFloat(item.y), equityReturn: parseFloat(item.equityReturn) }));
-              resolve({ name, data: formattedData });
-            } else { reject("未获取到有效数据，请检查基金代码"); }
-          } catch (e) { reject("数据解析异常"); } finally { cleanup(); }
-        };
-        script.onerror = () => { cleanup(); reject("请求失败，请检查网络或基金代码"); };
-        document.body.appendChild(script);
-      });
-    };
+    // 统一数据拉取：用唯一变量名避免并发冲突
+    const _fetchPingzhongdata = (code) => new Promise((resolve, reject) => {
+      const uid = `_pzd_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const nameKey = `fS_name_${uid}`;
+      const dataKey = `Data_netWorthTrend_${uid}`;
+      const script = document.createElement('script');
+      // pingzhongdata 固定写全局变量名，我们用替换方式读取后立即清除
+      script.src = `https://fund.eastmoney.com/pingzhongdata/${code}.js?v=${Date.now()}`;
+      const cleanup = () => {
+        if (script.parentNode) script.parentNode.removeChild(script);
+        try { delete window.fS_name; delete window.Data_netWorthTrend; } catch(e) {}
+      };
+      script.onload = () => {
+        try {
+          if (window.Data_netWorthTrend && window.Data_netWorthTrend.length > 0) {
+            const name = window.fS_name || `标的${code}`;
+            const data = window.Data_netWorthTrend.map(item => ({
+              date: new Date(item.x + 43200000).toISOString().split('T')[0],
+              netValue: parseFloat(item.y) || 0,
+              volume: 0,
+              equityReturn: parseFloat(item.equityReturn) || 0,
+            })).filter(d => d.netValue > 0);
+            cleanup();
+            if (data.length > 0) resolve({ name, data });
+            else reject('nodata');
+          } else { cleanup(); reject('empty'); }
+        } catch(e) { cleanup(); reject(e.message); }
+      };
+      script.onerror = () => { cleanup(); reject('net'); };
+      document.body.appendChild(script);
+    });
 
-    // 全局 JSONP 请求计数器，保证每次请求 callback key 唯一
+    const fetchFundRealData = (code) => _fetchPingzhongdata(code);
+
     const fetchStockRealData = (code) => {
-      return new Promise((resolve, reject) => {
+      // 先试 pingzhongdata（fund.eastmoney.com，已验证可访问）
+      // 失败再试 push2his K线接口
+      return _fetchPingzhongdata(code).catch(() => new Promise((resolve, reject) => {
         const timestamp = Date.now();
-        const getSecIdPrefix = (code) => { if (/^(5|6|9|11)/.test(code)) return "1"; return "0"; };
+        const getSecIdPrefix = (c) => { if (/^(5|6|9|11)/.test(c)) return "1"; return "0"; };
         const secId = `${getSecIdPrefix(code)}.${code}`;
         const jsonp = (url, cbName) => new Promise((res, rej) => {
           const script = document.createElement("script");
           script.id = cbName; script.src = url;
-          const cleanup = () => { try { delete window[cbName]; } catch (e) {} const s = document.getElementById(cbName); if (s) s.remove(); };
+          const cleanup = () => { try { delete window[cbName]; } catch(e) {} const s = document.getElementById(cbName); if (s) s.remove(); };
           window[cbName] = (data) => { cleanup(); res(data); };
           script.onerror = () => { cleanup(); rej(new Error("网络请求失败")); };
           document.body.appendChild(script);
@@ -233,17 +248,17 @@
           try {
             const cbNameName = `cb_stock_name_${timestamp}`;
             let stockName = "";
-            try { const nameRes = await jsonp(`https://push2.eastmoney.com/api/qt/stock/get?cb=${cbNameName}&secid=${secId}&fields=f58,f57`, cbNameName); stockName = nameRes?.data?.f58 || ""; } catch (e) {}
+            try { const nameRes = await jsonp(`https://push2.eastmoney.com/api/qt/stock/get?cb=${cbNameName}&secid=${secId}&fields=f58,f57`, cbNameName); stockName = nameRes?.data?.f58 || ""; } catch(e) {}
             const cbNameK = `cb_stock_k_${timestamp}`;
             const kRes = await jsonp(`https://push2his.eastmoney.com/api/qt/stock/kline/get?cb=${cbNameK}&secid=${secId}&fields1=f1&fields2=f51,f53,f57,f58&klt=101&fqt=1&end=20500101&lmt=1000`, cbNameK);
             if (kRes && kRes.data && kRes.data.klines) {
               const name = stockName || kRes.data.name || `标的${code}`;
-              const formattedData = kRes.data.klines.map((line) => { const parts = line.split(","); return { date: parts[0], netValue: parseFloat(parts[1]), volume: parseFloat(parts[2]) || 0, equityReturn: 0 }; });
-              resolve({ name, data: formattedData });
+              const data = kRes.data.klines.map(line => { const p = line.split(","); return { date: p[0], netValue: parseFloat(p[1]) || 0, volume: parseFloat(p[2]) || 0, equityReturn: 0 }; }).filter(d => d.netValue > 0);
+              resolve({ name, data });
             } else { reject("未获取到场内标的数据，请检查代码或市场"); }
-          } catch (err) { reject("数据解析失败"); }
+          } catch(err) { reject("数据解析失败"); }
         })();
-      });
+      }));
     };
 
     const downloadCSVTemplate = () => {
@@ -469,9 +484,7 @@
         try {
           let result;
           if (config.assetType === 'stock') {
-            // 先试 fund.eastmoney.com（已验证可访问），失败再试 push2his
-            try { result = await fetchFundRealData(codeToFetch); }
-            catch { result = await fetchStockRealData(codeToFetch); }
+            result = await fetchStockRealData(codeToFetch);
           } else {
             result = await fetchFundRealData(codeToFetch);
           }
@@ -2127,10 +2140,7 @@
         setLoadingCodes(prev => ({ ...prev, [code]: true }));
         setFetchErrors(prev => { const n = {...prev}; delete n[code]; return n; });
         try {
-          // 先试 fund.eastmoney.com（已验证可访问），失败再试 push2his
-          let result;
-          try { result = await fetchFundRealData(code); }
-          catch { result = await fetchStockRealData(code); }
+          const result = await fetchStockRealData(code);
           setEtfData(prev => ({ ...prev, [code]: { name: result.name || name, data: result.data } }));
         } catch(e) {
           setFetchErrors(prev => ({ ...prev, [code]: true }));
